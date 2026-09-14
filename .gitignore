@@ -1,0 +1,9 @@
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+renv/library/
+
+# Reproducible outputs can be large and are rebuilt from ProjectsData.
+results/*
+!results/.gitkeep
