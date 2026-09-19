@@ -32,17 +32,71 @@ organism_config <- function(organism, data_root = default_data_root()) {
   )
 }
 
-wp2_contrasts <- function() {
-  data.frame(
-    contrast = c("R_vs_C_0h", "RP_vs_C_0h", "RP_vs_R_0h",
-                 "R_vs_C_72h", "RP_vs_C_72h", "RP_vs_R_72h"),
-    numerator = c("WP2_R_0h", "WP2_R+P_0h", "WP2_R+P_0h",
-                  "WP2_R_72h", "WP2_R+P_72h", "WP2_R+P_72h"),
-    denominator = c("WP2_C_0h", "WP2_C_0h", "WP2_R_0h",
-                    "WP2_C_72h", "WP2_C_72h", "WP2_R_72h"),
-    comparison = c("R vs C", "R+P vs C", "R+P vs R",
-                   "R vs C", "R+P vs C", "R+P vs R"),
-    time = c("0h", "0h", "0h", "72h", "72h", "72h"),
-    stringsAsFactors = FALSE
+read_contrasts <- function(path) {
+  if (!file.exists(path)) {
+    stop("Contrast file does not exist: ", path, call. = FALSE)
+  }
+
+  contrasts <- data.table::fread(
+    path,
+    sep = "\t",
+    header = TRUE,
+    data.table = FALSE
   )
+
+  required <- c("contrast", "numerator", "denominator")
+  missing <- setdiff(required, names(contrasts))
+
+  if (length(missing)) {
+    stop(
+      "Contrast file is missing required columns: ",
+      paste(missing, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  if (!nrow(contrasts)) {
+    stop("Contrast file contains no contrasts.", call. = FALSE)
+  }
+
+  contrasts[required] <- lapply(contrasts[required], function(value) {
+    trimws(as.character(value))
+  })
+
+  invalid_values <- vapply(
+    contrasts[required],
+    function(value) anyNA(value) || any(!nzchar(value)),
+    logical(1)
+  )
+
+  if (any(invalid_values)) {
+    stop(
+      "Contrast definitions cannot contain missing or empty required values.",
+      call. = FALSE
+    )
+  }
+
+  if (anyDuplicated(contrasts$contrast)) {
+    duplicated_names <- unique(
+      contrasts$contrast[duplicated(contrasts$contrast)]
+    )
+
+    stop(
+      "Duplicated contrast names: ",
+      paste(duplicated_names, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  invalid <- contrasts$numerator == contrasts$denominator
+
+  if (any(invalid)) {
+    stop(
+      "Contrast numerator and denominator must differ: ",
+      paste(contrasts$contrast[invalid], collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  contrasts
 }

@@ -33,12 +33,12 @@ legacy notebooks.
 
 - R 4.3 or newer
 - Bioconductor package `edgeR`
-- CRAN packages `arrow`, `data.table`, `digest`, and `tidyselect`
+- CRAN packages `arrow`, `data.table`, `digest`, `ggplot2`, and `tidyselect`
 
 Install missing dependencies with:
 
 ```r
-install.packages(c("arrow", "data.table", "digest", "tidyselect"))
+install.packages(c("arrow", "data.table", "digest", "ggplot2", "tidyselect"))
 if (!requireNamespace("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
 BiocManager::install("edgeR")
@@ -77,6 +77,9 @@ Rscript --vanilla scripts/run_all.R
 ```
 
 Results are written below `results/` unless `--output-dir=/path` is supplied.
+The default contrast definitions are read from
+`config/contrasts/interes_wp2.tsv`; pass `--contrasts=/path/to/contrasts.tsv`
+to the run or input-validation commands to use another validated contrast set.
 Each result contains the edgeR statistics, an unambiguous contrast ID,
 comparison and time labels, and the corresponding raw taxonomic and eggNOG
 annotations.
@@ -93,6 +96,28 @@ The default comparison verifies structural and numerical consistency. Use
 P-values cannot currently be regenerated because the archived notebooks did
 not preserve their edgeR/limma versions; see
 [`docs/numerical-reproducibility.md`](docs/numerical-reproducibility.md).
+
+## Preview plots
+
+After generating and validating the DGE results, create previews for both
+organismal fractions with:
+
+```bash
+Rscript --vanilla scripts/plot_dge.R
+```
+
+The command writes five figures and a significance-count table below each
+`results/<organism>/figures/` directory: true volcano plots, MA plots,
+up/down/not-significant counts, P-value distributions, and the top
+differential features. Defaults are `FDR <= 0.05` and
+`|log2 fold change| >= 1`; they can be changed, for example, with:
+
+```bash
+Rscript --vanilla scripts/plot_dge.R --fdr=0.01 --logfc=2 --top=15
+```
+
+Use `--organism=prokaryotes` or `--organism=eukaryotes` to plot only one
+fraction. Plotting thresholds affect only the previews, never the DGE tables.
 
 ## Repository structure
 

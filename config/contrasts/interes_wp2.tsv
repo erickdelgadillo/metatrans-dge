@@ -1,0 +1,7 @@
+contrast	numerator	denominator	comparison	time
+R_vs_C_0h	WP2_R_0h	WP2_C_0h	R vs C	0h
+RP_vs_C_0h	WP2_R+P_0h	WP2_C_0h	R+P vs C	0h
+RP_vs_R_0h	WP2_R+P_0h	WP2_R_0h	R+P vs R	0h
+R_vs_C_72h	WP2_R_72h	WP2_C_72h	R vs C	72h
+RP_vs_C_72h	WP2_R+P_72h	WP2_C_72h	R+P vs C	72h
+RP_vs_R_72h	WP2_R+P_72h	WP2_R_72h	R+P vs R	72h
