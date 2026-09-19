@@ -10,6 +10,11 @@ data_root <- if (is.null(arguments$`data-root`)) {
   arguments$`data-root`
 }
 output_root <- if (is.null(arguments$`output-dir`)) file.path(repository_root, "results") else arguments$`output-dir`
+contrasts_file <- if (is.null(arguments$`contrasts`)) {
+  file.path(repository_root, "config", "contrasts", "interes_wp2.tsv")
+} else {
+  arguments$contrasts
+}
 
 runner <- file.path(repository_root, "scripts", "run_dge.R")
 for (organism in c("prokaryotes", "eukaryotes")) {
@@ -17,7 +22,8 @@ for (organism in c("prokaryotes", "eukaryotes")) {
     file.path(R.home("bin"), "Rscript"),
     c("--vanilla", shQuote(runner), paste0("--organism=", organism),
       paste0("--data-root=", shQuote(data_root)),
-      paste0("--output-dir=", shQuote(file.path(output_root, organism))))
+      paste0("--output-dir=", shQuote(file.path(output_root, organism))),
+      paste0("--contrasts=", shQuote(contrasts_file)))
   )
   if (status != 0L) stop("DGE workflow failed for ", organism, call. = FALSE)
 }

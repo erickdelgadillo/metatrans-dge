@@ -17,4 +17,9 @@ output_dir <- if (is.null(arguments$`output-dir`)) {
 } else {
   arguments$`output-dir`
 }
-run_dge_workflow(organism, data_root, output_dir)
+contrasts_file <- if (is.null(arguments$`contrasts`)) {
+  file.path(repository_root, "config", "contrasts", "interes_wp2.tsv")
+} else {
+  arguments$contrasts
+}
+run_dge_workflow(organism, data_root, output_dir, contrasts_file)

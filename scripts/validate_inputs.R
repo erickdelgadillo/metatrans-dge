@@ -7,6 +7,12 @@ load_workflow(repository_root)
 assert_packages(c("data.table", "digest"))
 arguments <- parse_arguments(commandArgs(trailingOnly = TRUE))
 data_root <- if (is.null(arguments$`data-root`)) default_data_root() else arguments$`data-root`
+contrasts_file <- if (is.null(arguments$`contrasts`)) {
+  file.path(repository_root, "config", "contrasts", "interes_wp2.tsv")
+} else {
+  arguments$contrasts
+}
+contrasts <- read_contrasts(contrasts_file)
 
 manifest_files <- file.path(
   repository_root, "config", c("input_SHA256SUMS", "reference_SHA256SUMS")
@@ -42,7 +48,7 @@ for (organism in c("prokaryotes", "eukaryotes")) {
   if (nrow(metadata) != expected) {
     stop(organism, " metadata has ", nrow(metadata), " rows; expected ", expected, ".", call. = FALSE)
   }
-  required_groups <- unique(c(wp2_contrasts()$numerator, wp2_contrasts()$denominator))
+  required_groups <- unique(c(contrasts$numerator, contrasts$denominator))
   missing_groups <- setdiff(required_groups, as.character(metadata$group))
   if (length(missing_groups)) {
     stop(organism, " metadata lacks groups: ", paste(missing_groups, collapse = ", "), call. = FALSE)
