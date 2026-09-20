@@ -43,6 +43,7 @@ default_output_dir <- function(repository_root, workpackage, organism) {
 
 load_workflow <- function(repository_root) {
   source(file.path(repository_root, "R", "config.R"))
+  source(file.path(repository_root, "R", "analysis_sheet.R"))
   source(file.path(repository_root, "R", "metadata.R"))
   source(file.path(repository_root, "R", "counts.R"))
   source(file.path(repository_root, "R", "adapters", "interes.R"))

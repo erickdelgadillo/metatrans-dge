@@ -39,6 +39,7 @@ prokaryotic CA samples.
 ## Requirements
 
 - R 4.3 or newer
+- Nextflow 24.10 or newer
 - Bioconductor package `edgeR`
 - CRAN packages `arrow`, `data.table`, `digest`, `ggplot2`, and `tidyselect`
 
@@ -50,6 +51,19 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
 BiocManager::install("edgeR")
 ```
+
+## Tests
+
+Run the fast synthetic contract tests with:
+
+```bash
+Rscript --vanilla tests/run_tests.R
+```
+
+Each test file runs in a separate R session. The suite covers canonical
+metadata and counts, INTERES adapters, count-matrix construction, contrast
+definitions, and workflow configuration without requiring the external data
+snapshot.
 
 ## Data location
 
@@ -66,6 +80,79 @@ Elsewhere, set `INTERES_DATA_ROOT` to a directory with the layout documented in
 ```bash
 export INTERES_DATA_ROOT=/path/to/marine-p-deficiency-metat/data
 ```
+
+## Analysis manifest
+
+[`config/analyses.example.csv`](config/analyses.example.csv) defines the
+portable input contract consumed by Nextflow. Each row represents
+one complete analysis rather than one biological sample, because each raw
+count table already contains multiple samples.
+
+| Columns | Purpose |
+| --- | --- |
+| `analysis_id`, `adapter` | Unique analysis name and dataset adapter |
+| `organism`, `workpackage` | Biological fraction and selected experiment |
+| `counts`, `metadata`, `annotations`, `contrasts` | Explicit input paths |
+| `feature_column`, `raw_feature_column` | Raw and output feature conventions |
+| `output_name`, `reference` | Result filename and optional reference |
+
+Copy the example to create a workstation-specific manifest:
+
+```bash
+cp config/analyses.example.csv config/analyses.local.csv
+```
+
+`config/analyses.local.csv` is ignored by Git. Absolute paths are accepted;
+relative paths are resolved from the directory containing the manifest. The R
+loader validates required fields, unique analysis IDs, INTERES conventions,
+and file existence. Validate a local manifest with:
+
+```bash
+Rscript --vanilla scripts/validate_analysis_sheet.R \
+  --input=config/analyses.local.csv
+```
+
+Run one manifest row by its ID with:
+
+```bash
+Rscript --vanilla scripts/run_analysis.R \
+  --analysis-sheet=config/analyses.local.csv \
+  --analysis-id=interes_wp1_prok
+```
+
+Manifest-driven results default to `results/<analysis_id>/`. The existing
+organism/workpackage CLI remains available as a compatibility wrapper.
+
+## Nextflow workflow
+
+The DSL2 entry point reads the analysis manifest, creates one task per row,
+stages every declared input, and publishes one directory per `analysis_id`.
+Run one analysis first:
+
+```bash
+nextflow run . \
+  --input config/analyses.local.csv \
+  --analysis_id interes_wp1_prok
+```
+
+When that succeeds, omit `--analysis_id` to run every manifest row:
+
+```bash
+nextflow run . --input config/analyses.local.csv
+```
+
+Use `-resume` after an interrupted or previously completed run so Nextflow can
+reuse unchanged tasks:
+
+```bash
+nextflow run . --input config/analyses.local.csv -resume
+```
+
+Results are copied to `results/<analysis_id>/` by default. Set another
+destination with `--outdir /path/to/results`. The initial local configuration
+runs one DGE task at a time, with one CPU and 32 GB of memory, to avoid running
+the two large organismal analyses concurrently. Executor, memory, and CPU
+settings can later be overridden in an environment-specific Nextflow config.
 
 ## Run
 
@@ -141,11 +228,15 @@ tree. Plotting thresholds affect only the previews, never the DGE tables.
 
 ```text
 metatranscriptome-dge-workflow/
+├── main.nf               # Top-level Nextflow entry point
+├── nextflow.config       # Local defaults and task resources
+├── workflows/            # DSL2 workflow composition
+├── modules/              # Reusable Nextflow processes
 ├── R/                    # Input, annotation, and edgeR functions
 ├── config/               # Verified source checksums
 ├── docs/                 # Audit of the legacy notebooks
 ├── scripts/              # Command-line entry points
-├── tests/                # Fast synthetic smoke test
+├── tests/                # Fast synthetic contract tests and runner
 ├── results/              # Rebuilt outputs (ignored by Git)
 ├── DATA.md
 └── README.md

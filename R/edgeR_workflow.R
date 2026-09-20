@@ -65,17 +65,19 @@ run_edger <- function(
   data.table::rbindlist(outputs, use.names = TRUE)
 }
 
-run_dge_workflow <- function(
-  organism,
-  data_root,
+run_dge_analysis <- function(
+  config,
   output_dir,
   contrasts_file,
-  workpackage = "WP2"
+  workpackage
 ) {
   workpackage <- match.arg(workpackage, c("WP1", "WP2"))
+  organism <- match.arg(
+    config$organism,
+    c("prokaryotes", "eukaryotes")
+  )
 
   assert_packages(c("arrow", "data.table", "edgeR", "tidyselect"))
-  config <- organism_config(organism, data_root)
   assert_input_files(config)
   contrasts <- read_contrasts(contrasts_file)
   metadata <- read_sample_metadata(config, workpackage)
@@ -101,6 +103,9 @@ run_dge_workflow <- function(
   arrow::write_parquet(result, output_file, compression = "zstd")
   provenance_file <- file.path(output_dir, "run_metadata.txt")
   provenance <- c(
+    if (!is.null(config$analysis_id)) {
+      paste0("analysis_id: ", config$analysis_id)
+    },
     paste0("organism: ", organism),
     paste0("workpackage: ", workpackage),
     paste0("generated_utc: ", format(Sys.time(), tz = "UTC", usetz = TRUE)),
@@ -121,4 +126,20 @@ run_dge_workflow <- function(
   message("Wrote ", format(nrow(result), big.mark = ","), " rows to:\n", output_file)
   message("Wrote run metadata to:\n", provenance_file)
   invisible(output_file)
+}
+
+run_dge_workflow <- function(
+  organism,
+  data_root,
+  output_dir,
+  contrasts_file,
+  workpackage = "WP2"
+) {
+  config <- organism_config(organism, data_root)
+  run_dge_analysis(
+    config,
+    output_dir,
+    contrasts_file,
+    workpackage
+  )
 }
