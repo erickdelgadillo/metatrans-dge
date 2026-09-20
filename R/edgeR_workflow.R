@@ -71,7 +71,10 @@ run_dge_workflow <- function(organism, data_root, output_dir, contrasts_file) {
   assert_input_files(config)
   contrasts <- read_contrasts(contrasts_file)
   metadata <- read_sample_metadata(config)
-  prepared <- build_count_matrix(config, metadata)
+  counts <- read_feature_counts(config)
+  prepared <- build_count_matrix(counts, metadata)
+  rm(counts)
+  gc(verbose = FALSE)
   statistics <- run_edger(
     prepared$counts,
     prepared$samples,

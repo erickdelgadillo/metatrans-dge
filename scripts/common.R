@@ -18,6 +18,9 @@ parse_arguments <- function(arguments) {
 
 load_workflow <- function(repository_root) {
   source(file.path(repository_root, "R", "config.R"))
+  source(file.path(repository_root, "R", "metadata.R"))
+  source(file.path(repository_root, "R", "counts.R"))
+  source(file.path(repository_root, "R", "adapters", "interes.R"))
   source(file.path(repository_root, "R", "io.R"))
   source(file.path(repository_root, "R", "edgeR_workflow.R"))
 }
