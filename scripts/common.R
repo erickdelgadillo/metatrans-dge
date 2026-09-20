@@ -16,6 +16,31 @@ parse_arguments <- function(arguments) {
   parsed
 }
 
+default_contrasts_file <- function(repository_root, workpackage, organism) {
+  workpackage <- match.arg(workpackage, c("WP1", "WP2"))
+  organism <- match.arg(organism, c("prokaryotes", "eukaryotes"))
+
+  filename <- if (workpackage == "WP2") {
+    "interes_wp2.tsv"
+  } else {
+    paste0("interes_wp1_", organism, ".tsv")
+  }
+
+  file.path(repository_root, "config", "contrasts", filename)
+}
+
+default_output_dir <- function(repository_root, workpackage, organism) {
+  workpackage <- match.arg(workpackage, c("WP1", "WP2"))
+  organism <- match.arg(organism, c("prokaryotes", "eukaryotes"))
+
+  output_root <- file.path(repository_root, "results")
+  if (workpackage == "WP1") {
+    output_root <- file.path(output_root, "wp1")
+  }
+
+  file.path(output_root, organism)
+}
+
 load_workflow <- function(repository_root) {
   source(file.path(repository_root, "R", "config.R"))
   source(file.path(repository_root, "R", "metadata.R"))

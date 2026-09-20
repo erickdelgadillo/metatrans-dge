@@ -13,7 +13,8 @@ organism_config <- function(organism, data_root = default_data_root()) {
     return(list(
       organism = organism,
       feature_column = "orf",
-      counts = file.path(data_root, "processed", organism, "prok_counts_annotated.parquet"),
+      raw_feature_column = "orf",
+      counts = file.path(data_root, "raw", organism, "counts.tsv.gz"),
       annotations = file.path(data_root, "processed", organism, "prok_tpms_annotated.parquet"),
       metadata = file.path(data_root, "metadata", organism, "INTERES_Prok_samples_tags.csv"),
       reference = file.path(data_root, "processed", organism, "prok_differential_expression.parquet"),
@@ -24,7 +25,8 @@ organism_config <- function(organism, data_root = default_data_root()) {
   list(
     organism = organism,
     feature_column = "geneid",
-    counts = file.path(data_root, "processed", organism, "euk_counts_annotated.parquet"),
+    raw_feature_column = "Geneid",
+    counts = file.path(data_root, "raw", organism, "polyA_counts.tsv.gz"),
     annotations = file.path(data_root, "processed", organism, "euk_tpms_annotated.parquet"),
     metadata = file.path(data_root, "metadata", organism, "INTERES_Euk_samples_tags.csv"),
     reference = file.path(data_root, "processed", organism, "euk_differential_expression.parquet"),

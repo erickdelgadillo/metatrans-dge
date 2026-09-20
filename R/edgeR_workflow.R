@@ -65,13 +65,25 @@ run_edger <- function(
   data.table::rbindlist(outputs, use.names = TRUE)
 }
 
-run_dge_workflow <- function(organism, data_root, output_dir, contrasts_file) {
+run_dge_workflow <- function(
+  organism,
+  data_root,
+  output_dir,
+  contrasts_file,
+  workpackage = "WP2"
+) {
+  workpackage <- match.arg(workpackage, c("WP1", "WP2"))
+
   assert_packages(c("arrow", "data.table", "edgeR", "tidyselect"))
   config <- organism_config(organism, data_root)
   assert_input_files(config)
   contrasts <- read_contrasts(contrasts_file)
-  metadata <- read_sample_metadata(config)
-  counts <- read_feature_counts(config)
+  metadata <- read_sample_metadata(config, workpackage)
+  raw_counts <- read_feature_counts(config)
+  counts <- adapt_interes_counts(raw_counts, metadata, organism)
+  rm(raw_counts)
+  gc(verbose = FALSE)
+  counts <- filter_annotated_counts(counts, config)
   prepared <- build_count_matrix(counts, metadata)
   rm(counts)
   gc(verbose = FALSE)
@@ -90,6 +102,7 @@ run_dge_workflow <- function(organism, data_root, output_dir, contrasts_file) {
   provenance_file <- file.path(output_dir, "run_metadata.txt")
   provenance <- c(
     paste0("organism: ", organism),
+    paste0("workpackage: ", workpackage),
     paste0("generated_utc: ", format(Sys.time(), tz = "UTC", usetz = TRUE)),
     paste0("R: ", R.version.string),
     paste0("edgeR: ", as.character(utils::packageVersion("edgeR"))),

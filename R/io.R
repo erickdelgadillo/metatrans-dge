@@ -19,52 +19,38 @@ read_sample_metadata <- function(config, workpackage = "WP2") {
   adapt_interes_metadata(metadata, workpackage)
 }
 
-read_feature_counts <- function(config, workpackage = "WP2") {
-  message(
-    "Reading the final annotated ",
-    workpackage,
-    " counts for ",
-    config$organism,
-    "..."
-  )
+read_feature_counts <- function(config) {
+  message("Reading raw INTERES counts for ", config$organism, "...")
 
-  columns <- c(
-    config$feature_column, "Workpackage", "treatment", "time", "replic", "count"
+  data.table::fread(
+    config$counts,
+    select = c(config$raw_feature_column, "sample", "count"),
+    encoding = "UTF-8"
   )
+}
 
-  counts <- data.table::as.data.table(
-    arrow::read_parquet(config$counts, col_select = tidyselect::all_of(columns))
-  )
+filter_annotated_counts <- function(counts, config) {
+  feature_ids <- arrow::read_parquet(
+    config$annotations,
+    col_select = tidyselect::all_of(config$feature_column),
+    as_data_frame = TRUE
+  )[[config$feature_column]]
+  feature_ids <- unique(as.character(feature_ids))
 
-  counts <- counts[Workpackage == workpackage]
+  keep <- as.character(counts$feature_id) %in% feature_ids
+  counts <- counts[keep, , drop = FALSE]
 
   if (!nrow(counts)) {
-    stop(
-      "The annotated count table has no ",
-      workpackage,
-      " rows.",
-      call. = FALSE
-    )
+    stop("No count features have curated annotations.", call. = FALSE)
   }
 
-  counts[, sample_id := paste(
-    treatment,
-    time,
-    sub("^R", "", replic),
-    sep = "_"
-  )]
-
-  counts <- counts[
-    , .(count = sum(count)),
-    by = c(config$feature_column, "sample_id")
-  ]
-
-  data.table::setnames(counts, config$feature_column, "feature_id")
-
-  as.data.frame(
-    counts[, .(feature_id, sample_id, count)],
-    stringsAsFactors = FALSE
+  message(
+    "Retained ",
+    format(length(unique(counts$feature_id)), big.mark = ","),
+    " features with curated annotations."
   )
+
+  counts
 }
 
 build_count_matrix <- function(counts, metadata) {

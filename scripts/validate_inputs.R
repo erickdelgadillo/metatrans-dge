@@ -6,13 +6,11 @@ repository_root <- script_repository_root()
 load_workflow(repository_root)
 assert_packages(c("data.table", "digest"))
 arguments <- parse_arguments(commandArgs(trailingOnly = TRUE))
+workpackage <- match.arg(
+  toupper(if (is.null(arguments$workpackage)) "WP2" else arguments$workpackage),
+  c("WP1", "WP2")
+)
 data_root <- if (is.null(arguments$`data-root`)) default_data_root() else arguments$`data-root`
-contrasts_file <- if (is.null(arguments$`contrasts`)) {
-  file.path(repository_root, "config", "contrasts", "interes_wp2.tsv")
-} else {
-  arguments$contrasts
-}
-contrasts <- read_contrasts(contrasts_file)
 
 manifest_files <- file.path(
   repository_root, "config", c("input_SHA256SUMS", "reference_SHA256SUMS")
@@ -43,16 +41,36 @@ if (length(failures)) {
 
 for (organism in c("prokaryotes", "eukaryotes")) {
   config <- organism_config(organism, data_root)
-  metadata <- read_sample_metadata(config)
-  expected <- if (organism == "prokaryotes") 18L else 17L
+  metadata <- read_sample_metadata(config, workpackage)
+  expected <- if (workpackage == "WP1") {
+    if (organism == "prokaryotes") 6L else 9L
+  } else if (organism == "prokaryotes") {
+    18L
+  } else {
+    17L
+  }
   if (nrow(metadata) != expected) {
     stop(organism, " metadata has ", nrow(metadata), " rows; expected ", expected, ".", call. = FALSE)
   }
+  contrasts_file <- if (is.null(arguments$contrasts)) {
+    default_contrasts_file(repository_root, workpackage, organism)
+  } else {
+    arguments$contrasts
+  }
+  contrasts <- read_contrasts(contrasts_file)
   required_groups <- unique(c(contrasts$numerator, contrasts$denominator))
   missing_groups <- setdiff(required_groups, as.character(metadata$group))
   if (length(missing_groups)) {
     stop(organism, " metadata lacks groups: ", paste(missing_groups, collapse = ", "), call. = FALSE)
   }
-  message("OK  ", organism, " metadata design (", nrow(metadata), " samples)")
+  message(
+    "OK  ",
+    organism,
+    " ",
+    workpackage,
+    " metadata design (",
+    nrow(metadata),
+    " samples)"
+  )
 }
 message("All input and design checks passed.")
