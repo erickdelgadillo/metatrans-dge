@@ -11,10 +11,12 @@ ignored and can be rebuilt.
 
 ## Analysis design
 
-Both organismal fractions use the final annotated WP2 count tables for
-expression filtering, TMM normalisation, dispersion estimation, and
-quasi-likelihood model fitting. This is the input state that reproduces the
-paper-associated DGE snapshots. The exported results contain six contrasts:
+Both organismal fractions use the raw INTERES count tables. Dataset-specific
+adapters map their different feature and sample identifiers to the shared
+`feature_id`, `sample_id`, and `count` contract before matrix construction and
+edgeR analysis. The curated annotation tables define the tested feature
+universe, preserving compatibility with the historical annotated inputs. WP2
+remains the default workpackage and exports six contrasts:
 
 | Contrast ID | Numerator | Denominator |
 | --- | --- | --- |
@@ -28,6 +30,11 @@ paper-associated DGE snapshots. The exported results contain six contrasts:
 Positive `logFC` therefore means higher expression in the numerator. This
 explicit direction removes the ambiguity in the comments and labels of the
 legacy notebooks.
+
+WP1 uses the samples actually present in each fraction. Prokaryotes export the
+`C_72h_vs_C_0h` contrast. Eukaryotes additionally export
+`CA_72h_vs_C_0h` and `CA_vs_C_72h`; the workflow does not invent the absent
+prokaryotic CA samples.
 
 ## Requirements
 
@@ -76,15 +83,25 @@ Rscript --vanilla scripts/run_dge.R --organism=eukaryotes
 Rscript --vanilla scripts/run_all.R
 ```
 
+WP2 is the default. Select WP1 explicitly with:
+
+```bash
+Rscript --vanilla scripts/run_dge.R --organism=prokaryotes --workpackage=WP1
+Rscript --vanilla scripts/run_dge.R --organism=eukaryotes --workpackage=WP1
+Rscript --vanilla scripts/run_all.R --workpackage=WP1
+```
+
 Results are written below `results/` unless `--output-dir=/path` is supplied.
-The default contrast definitions are read from
-`config/contrasts/interes_wp2.tsv`; pass `--contrasts=/path/to/contrasts.tsv`
-to the run or input-validation commands to use another validated contrast set.
+WP2 retains the existing `results/<organism>/` layout; WP1 defaults to
+`results/wp1/<organism>/` so the two analyses cannot overwrite each other.
+Default contrast definitions are selected by workpackage and organism from
+`config/contrasts/`; pass `--contrasts=/path/to/contrasts.tsv` to the run or
+input-validation commands to use another validated contrast set.
 Each result contains the edgeR statistics, an unambiguous contrast ID,
 comparison and time labels, and the corresponding raw taxonomic and eggNOG
 annotations.
 
-To compare a regenerated result with the curated reference snapshot:
+To compare regenerated WP2 results with the curated reference snapshots:
 
 ```bash
 Rscript --vanilla scripts/compare_reference.R --organism=prokaryotes
@@ -117,7 +134,8 @@ Rscript --vanilla scripts/plot_dge.R --fdr=0.01 --logfc=2 --top=15
 ```
 
 Use `--organism=prokaryotes` or `--organism=eukaryotes` to plot only one
-fraction. Plotting thresholds affect only the previews, never the DGE tables.
+fraction. Add `--workpackage=WP1` to read results from the default WP1 output
+tree. Plotting thresholds affect only the previews, never the DGE tables.
 
 ## Repository structure
 

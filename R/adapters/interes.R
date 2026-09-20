@@ -129,5 +129,9 @@ adapt_interes_counts <- function(counts, metadata, organism) {
 
   names(counts)[names(counts) == feature_column] <- "feature_id"
 
+  if (organism == "eukaryotes") {
+    counts$feature_id <- sub("^cds\\.", "", counts$feature_id)
+  }
+
   counts[, c("feature_id", "sample_id", "count"), drop = FALSE]
 }

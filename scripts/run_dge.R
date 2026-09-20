@@ -11,15 +11,25 @@ if (is.null(organism)) {
   stop("Required argument: --organism=prokaryotes or --organism=eukaryotes", call. = FALSE)
 }
 organism <- match.arg(organism, c("prokaryotes", "eukaryotes"))
+workpackage <- match.arg(
+  toupper(if (is.null(arguments$workpackage)) "WP2" else arguments$workpackage),
+  c("WP1", "WP2")
+)
 data_root <- if (is.null(arguments$`data-root`)) default_data_root() else arguments$`data-root`
 output_dir <- if (is.null(arguments$`output-dir`)) {
-  file.path(repository_root, "results", organism)
+  default_output_dir(repository_root, workpackage, organism)
 } else {
   arguments$`output-dir`
 }
 contrasts_file <- if (is.null(arguments$`contrasts`)) {
-  file.path(repository_root, "config", "contrasts", "interes_wp2.tsv")
+  default_contrasts_file(repository_root, workpackage, organism)
 } else {
   arguments$contrasts
 }
-run_dge_workflow(organism, data_root, output_dir, contrasts_file)
+run_dge_workflow(
+  organism,
+  data_root,
+  output_dir,
+  contrasts_file,
+  workpackage
+)

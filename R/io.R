@@ -14,43 +14,59 @@ assert_input_files <- function(config) {
   invisible(paths)
 }
 
-read_sample_metadata <- function(config) {
+read_sample_metadata <- function(config, workpackage = "WP2") {
   metadata <- data.table::fread(config$metadata, encoding = "UTF-8")
-  required <- c("sample", "group", "Sample", "date")
-  missing <- setdiff(required, names(metadata))
-  if (length(missing)) {
-    stop("Metadata columns are missing: ", paste(missing, collapse = ", "), call. = FALSE)
-  }
-
-  metadata <- metadata[grepl("^WP2_", group)]
-  metadata[, replic := sub("^.*_", "", Sample)]
-  metadata[, analysis_sample := paste(sub("^WP2_", "", group), replic, sep = "_")]
-  metadata[, group := factor(group, levels = unique(group))]
-  if (anyDuplicated(metadata$analysis_sample)) {
-    stop("Metadata analysis sample identifiers are not unique.", call. = FALSE)
-  }
-  metadata
+  adapt_interes_metadata(metadata, workpackage)
 }
 
-build_count_matrix <- function(config, metadata) {
-  message("Reading the final annotated WP2 counts for ", config$organism, "...")
-  columns <- c(
-    config$feature_column, "Workpackage", "treatment", "time", "replic", "count"
-  )
-  counts <- data.table::as.data.table(
-    arrow::read_parquet(config$counts, col_select = tidyselect::all_of(columns))
-  )
-  counts <- counts[Workpackage == "WP2"]
-  counts[, sample := paste(treatment, time, replic, sep = "_")]
-  counts <- counts[, .(count = sum(count)), by = c(config$feature_column, "sample")]
+read_feature_counts <- function(config) {
+  message("Reading raw INTERES counts for ", config$organism, "...")
 
-  if (!nrow(counts)) stop("The annotated count table has no WP2 rows.", call. = FALSE)
-  if (anyNA(counts$count) || any(counts$count < 0) || any(counts$count %% 1 != 0)) {
-    stop("Counts must be finite, non-negative integers.", call. = FALSE)
+  data.table::fread(
+    config$counts,
+    select = c(config$raw_feature_column, "sample", "count"),
+    encoding = "UTF-8"
+  )
+}
+
+filter_annotated_counts <- function(counts, config) {
+  feature_ids <- arrow::read_parquet(
+    config$annotations,
+    col_select = tidyselect::all_of(config$feature_column),
+    as_data_frame = TRUE
+  )[[config$feature_column]]
+  feature_ids <- unique(as.character(feature_ids))
+
+  keep <- as.character(counts$feature_id) %in% feature_ids
+  counts <- counts[keep, , drop = FALSE]
+
+  if (!nrow(counts)) {
+    stop("No count features have curated annotations.", call. = FALSE)
   }
 
-  sample_keys <- metadata$analysis_sample
-  observed_samples <- unique(counts$sample)
+  message(
+    "Retained ",
+    format(length(unique(counts$feature_id)), big.mark = ","),
+    " features with curated annotations."
+  )
+
+  counts
+}
+
+build_count_matrix <- function(counts, metadata) {
+  validate_counts(counts)
+  validate_sample_metadata(metadata)
+
+  counts <- data.table::copy(data.table::as.data.table(counts))
+  metadata <- as.data.frame(metadata, stringsAsFactors = FALSE)
+
+  counts[, feature_id := as.character(feature_id)]
+  counts[, sample_id := as.character(sample_id)]
+  metadata$sample_id <- as.character(metadata$sample_id)
+
+  sample_keys <- metadata$sample_id
+  observed_samples <- unique(counts$sample_id)
+
   if (!setequal(sample_keys, observed_samples)) {
     stop(
       "Count/metadata sample mismatch. Missing from counts: ",
@@ -62,19 +78,25 @@ build_count_matrix <- function(config, metadata) {
   }
 
   message("Constructing the zero-filled feature-by-sample matrix...")
-  cast_formula <- stats::as.formula(paste(config$feature_column, "~ sample"))
-  wide <- data.table::dcast(counts, cast_formula, value.var = "count", fill = 0L)
+
+  wide <- data.table::dcast(
+    counts,
+    feature_id ~ sample_id,
+    value.var = "count",
+    fill = 0L
+  )
+
   rm(counts)
   gc(verbose = FALSE)
 
-  data.table::setcolorder(wide, c(config$feature_column, sample_keys))
+  data.table::setcolorder(wide, c("feature_id", sample_keys))
   count_matrix <- as.matrix(wide[, ..sample_keys])
-  rownames(count_matrix) <- wide[[config$feature_column]]
-  storage.mode(count_matrix) <- "integer"
+  rownames(count_matrix) <- wide$feature_id
 
-  sample_data <- as.data.frame(metadata)
-  rownames(sample_data) <- sample_data$analysis_sample
+  sample_data <- metadata
+  rownames(sample_data) <- sample_data$sample_id
   sample_data <- sample_data[colnames(count_matrix), , drop = FALSE]
+
   list(counts = count_matrix, samples = sample_data)
 }
 

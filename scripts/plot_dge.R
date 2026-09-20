@@ -9,6 +9,10 @@ source(file.path(repository_root, "R", "plotting.R"))
 assert_packages(c("arrow", "data.table", "ggplot2"))
 
 arguments <- parse_arguments(commandArgs(trailingOnly = TRUE))
+workpackage <- match.arg(
+  toupper(if (is.null(arguments$workpackage)) "WP2" else arguments$workpackage),
+  c("WP1", "WP2")
+)
 
 parse_number <- function(name, default, lower, upper, integer = FALSE) {
   raw_value <- arguments[[name]]
@@ -41,7 +45,8 @@ if (!is.null(arguments$input) && length(organisms) != 1L) {
 }
 
 results_dir <- if (is.null(arguments$`results-dir`)) {
-  file.path(repository_root, "results")
+  root <- file.path(repository_root, "results")
+  if (workpackage == "WP1") file.path(root, "wp1") else root
 } else {
   arguments$`results-dir`
 }
@@ -83,4 +88,4 @@ for (organism in organisms) {
   gc(verbose = FALSE)
 }
 
-message("DGE preview figures completed.")
+message(workpackage, " DGE preview figures completed.")
