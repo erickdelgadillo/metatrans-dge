@@ -3,6 +3,10 @@
 .Ruserdata
 .Rproj.user/
 renv/library/
+config/analyses.local.csv
+.nextflow/
+.nextflow.log*
+work/
 
 # Reproducible outputs can be large and are rebuilt from ProjectsData.
 results/*

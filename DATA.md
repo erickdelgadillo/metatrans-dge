@@ -37,6 +37,14 @@ raw counts, taxonomy, eggNOG files, and metadata were also checked byte-for-byte
 against their counterparts in the archived `INTERES/Calculation` directory.
 Run `scripts/validate_inputs.R` before a full analysis.
 
+## Analysis manifest
+
+The repository includes `config/analyses.example.csv`, with one row for each
+WP1/WP2 and prokaryote/eukaryote analysis. It records every input path and the
+adapter and feature-column conventions needed to convert those inputs to the
+canonical contract. Local copies can use absolute paths or paths relative to
+the manifest itself; `config/analyses.local.csv` is ignored by Git.
+
 ## Sample design
 
 The source metadata contains 24 prokaryotic samples and 26 eukaryotic samples.
