@@ -6,7 +6,9 @@ renv/library/
 .nextflow/
 .nextflow.log*
 work/
+data/
 
 # Reproducible outputs can be large and are rebuilt by the workflow.
 results/*
 !results/.gitkeep
+

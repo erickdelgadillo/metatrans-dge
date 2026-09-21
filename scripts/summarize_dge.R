@@ -1,0 +1,111 @@
+#!/usr/bin/env Rscript
+
+arguments <- commandArgs(trailingOnly = TRUE)
+
+parse_arguments <- function(arguments) {
+  values <- list()
+
+  for (argument in arguments) {
+    if (!startsWith(argument, "--") || !grepl("=", argument, fixed = TRUE)) {
+      stop(
+        "Arguments must use --name=value syntax: ",
+        argument,
+        call. = FALSE
+      )
+    }
+
+    parts <- strsplit(
+      sub("^--", "", argument),
+      "=",
+      fixed = TRUE
+    )[[1]]
+
+    name <- parts[[1]]
+    value <- paste(parts[-1], collapse = "=")
+
+    values[[name]] <- value
+  }
+
+  values
+}
+
+args <- parse_arguments(arguments)
+
+required <- c(
+  "input",
+  "output"
+)
+
+missing <- setdiff(required, names(args))
+
+if (length(missing)) {
+  stop(
+    "Missing required arguments: ",
+    paste(paste0("--", missing), collapse = ", "),
+    call. = FALSE
+  )
+}
+
+script_argument <- grep(
+  "^--file=",
+  commandArgs(FALSE),
+  value = TRUE
+)[[1]]
+
+script_path <- normalizePath(
+  sub("^--file=", "", script_argument)
+)
+
+repository_root <- normalizePath(
+  file.path(dirname(script_path), "..")
+)
+
+source(
+  file.path(
+    repository_root,
+    "R",
+    "summary.R"
+  )
+)
+
+if (!requireNamespace("data.table", quietly = TRUE)) {
+  stop(
+    "Missing required R package: data.table",
+    call. = FALSE
+  )
+}
+
+if (!file.exists(args$input)) {
+  stop(
+    "DGE result does not exist: ",
+    args$input,
+    call. = FALSE
+  )
+}
+
+results <- data.table::fread(
+  args$input,
+  data.table = TRUE
+)
+
+summary <- summarize_dge(results)
+
+output_dir <- dirname(args$output)
+
+if (!dir.exists(output_dir)) {
+  dir.create(
+    output_dir,
+    recursive = TRUE
+  )
+}
+
+data.table::fwrite(
+  summary,
+  args$output,
+  sep = "\t"
+)
+
+message(
+  "Wrote DGE summary to:\n",
+  normalizePath(args$output)
+)
