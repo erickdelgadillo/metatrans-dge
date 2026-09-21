@@ -1,0 +1,13 @@
+feature_id	sample_id	count
+gene_1	C_1	10
+gene_1	C_2	12
+gene_1	T_1	40
+gene_1	T_2	38
+gene_2	C_1	20
+gene_2	C_2	18
+gene_2	T_1	19
+gene_2	T_2	21
+gene_3	C_1	0
+gene_3	C_2	1
+gene_3	T_1	8
+gene_3	T_2	7
