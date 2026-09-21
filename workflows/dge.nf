@@ -1,4 +1,5 @@
-include { RUN_DGE } from '../modules/local/run_dge/main'
+include { RUN_DGE  } from '../modules/local/run_dge/main'
+include { PLOT_DGE } from '../modules/local/plot_dge/main'
 
 workflow DGE_WORKFLOW {
 
@@ -25,6 +26,13 @@ workflow DGE_WORKFLOW {
         scripts_dir
     )
 
+    PLOT_DGE(
+    RUN_DGE.out.results,
+    r_sources,
+    scripts_dir
+    )
+
     emit:
     results = RUN_DGE.out.results
+    plots = PLOT_DGE.out.plots
 }
