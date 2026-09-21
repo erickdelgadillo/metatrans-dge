@@ -45,8 +45,14 @@ Positive `logFC` indicates higher expression in the numerator.
 nextflow run . \
   --counts counts.tsv \
   --metadata metadata.tsv \
-  --contrasts contrasts.tsv
+  --contrasts contrasts.tsv \
+  --fdr 0.05 \
+  --logfc 1
 ```
+
+`--fdr` and `--logfc` configure the significance thresholds used by the
+per-contrast summary and the volcano and MA plots. Their defaults are `0.05`
+and `1`, respectively.
 
 Test the workflow with:
 
@@ -66,7 +72,7 @@ counts + metadata + contrasts
        dge.tsv.gz
             │
             ▼
-      volcano + MA plots
+  summary + volcano + MA plots
 ```
 
 The edgeR analysis uses `filterByExpr`, TMM normalization and the quasi-likelihood framework.
@@ -76,9 +82,11 @@ The edgeR analysis uses `filterByExpr`, TMM normalization and the quasi-likeliho
 ```text
 results/
 ├── dge.tsv.gz
+├── dge_summary.tsv
 └── figures/
-    ├── volcano.png
-    └── ma.png
+    ├── dge_summary.png
+    ├── ma.png
+    └── volcano.png
 ```
 
 ## Roadmap
@@ -88,7 +96,7 @@ results/
 - [x] Nextflow DSL2 workflow
 - [x] Volcano and MA plots
 - [x] Synthetic test profile
-- [ ] DGE summary by contrast
+- [x] DGE summary by contrast
 - [ ] Additional visualizations
 - [ ] Containers
 - [ ] `nf-test` and CI

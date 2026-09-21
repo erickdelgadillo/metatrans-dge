@@ -9,6 +9,8 @@ workflow DGE_WORKFLOW {
     counts
     metadata
     contrasts
+    fdr
+    logfc
 
     main:
 
@@ -29,21 +31,25 @@ workflow DGE_WORKFLOW {
     )
 
     SUMMARIZE_DGE(
-    RUN_DGE.out.results,
-    r_sources,
-    scripts_dir
+        RUN_DGE.out.results,
+        r_sources,
+        scripts_dir,
+        fdr,
+        logfc
     )
 
     PLOT_DGE(
-    RUN_DGE.out.results,
-    r_sources,
-    scripts_dir
+        RUN_DGE.out.results,
+        r_sources,
+        scripts_dir,
+        fdr,
+        logfc
     )
 
     PLOT_SUMMARY(
-    SUMMARIZE_DGE.out.summary,
-    r_sources,
-    scripts_dir
+        SUMMARIZE_DGE.out.summary,
+        r_sources,
+        scripts_dir
     )
 
     emit:
