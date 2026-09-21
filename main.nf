@@ -5,6 +5,10 @@ include { DGE_WORKFLOW } from './workflows/dge'
 params.counts = null
 params.metadata = null
 params.contrasts = null
+
+params.fdr = 0.05
+params.logfc = 1
+
 params.outdir = 'results'
 params.publish_mode = 'copy'
 
