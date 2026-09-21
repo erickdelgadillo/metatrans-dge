@@ -8,6 +8,8 @@ process SUMMARIZE_DGE {
     path dge_results
     path r_sources
     path scripts_dir
+    val fdr
+    val logfc
 
     output:
     path "dge_summary.tsv", emit: summary
@@ -15,8 +17,10 @@ process SUMMARIZE_DGE {
     script:
     """
     Rscript --vanilla ${scripts_dir}/summarize_dge.R \
-        --input='${dge_results}' \
-        --output='dge_summary.tsv'
+    --input='${dge_results}' \
+    --output='dge_summary.tsv' \
+    --fdr='${fdr}' \
+    --logfc='${logfc}'
     """
 
     stub:
