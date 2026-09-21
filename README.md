@@ -2,7 +2,12 @@
 
 ![Nextflow](https://img.shields.io/badge/Nextflow-DSL2-23aa62)
 ![R](https://img.shields.io/badge/R-edgeR-276DC3)
+![Metatranscriptomics](https://img.shields.io/badge/metatranscriptomics-DGE-6A5ACD)
+![Status](https://img.shields.io/badge/status-active%20development-yellow)
 ![License](https://img.shields.io/badge/license-MIT-green)
+
+
+
 
 A reusable **Nextflow DSL2 workflow for differential gene expression analysis of metatranscriptomic count data**.
 
@@ -105,5 +110,8 @@ results/
 MIT License.
 
 ## Author
+
+Erick Delgadillo-Nuñ
+
 
 **Erick Delgadillo-Nuño**
