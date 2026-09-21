@@ -2,18 +2,28 @@ nextflow.enable.dsl = 2
 
 include { DGE_WORKFLOW } from './workflows/dge'
 
-params.input = null
+params.counts = null
+params.metadata = null
+params.contrasts = null
 params.outdir = 'results'
-params.analysis_id = null
 params.publish_mode = 'copy'
 
 workflow {
-    if (!params.input) {
-        error "Missing required parameter --input (analysis-sheet CSV)"
+    if (!params.counts) {
+        error "Missing required parameter --counts"
+    }
+
+    if (!params.metadata) {
+        error "Missing required parameter --metadata"
+    }
+
+    if (!params.contrasts) {
+        error "Missing required parameter --contrasts"
     }
 
     DGE_WORKFLOW(
-        file(params.input, checkIfExists: true),
-        params.analysis_id
+        file(params.counts, checkIfExists: true),
+        file(params.metadata, checkIfExists: true),
+        file(params.contrasts, checkIfExists: true)
     )
 }
