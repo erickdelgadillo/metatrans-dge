@@ -6,11 +6,17 @@
 ![Status](https://img.shields.io/badge/status-active%20development-yellow)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-A reproducible **Nextflow DSL2 workflow for metatranscriptomic differential gene expression analysis with edgeR**.
+A reusable **Nextflow DSL2 workflow for differential gene expression analysis of metatranscriptomic count data using edgeR**.
 
-The project originated from the INTERES marine metatranscriptomic analyses and is being progressively refactored from paper-specific R notebooks into a modular and reusable workflow.
+The workflow is intentionally dataset-independent. Instead of embedding experiment-specific naming conventions or adapters into the statistical engine, it operates on three small canonical input files:
 
-The current implementation supports prokaryotic and poly(A)-selected eukaryotic count tables, dataset-specific input adaptation, configurable contrasts, reproducible edgeR analysis, and manifest-driven execution through Nextflow.
+```text
+counts.tsv
+metadata.tsv
+contrasts.tsv
+```
+
+Once a dataset is represented using this contract, the same workflow can be reused without modifying the DGE implementation.
 
 ---
 
@@ -18,585 +24,687 @@ The current implementation supports prokaryotic and poly(A)-selected eukaryotic 
 
 The workflow separates three concerns:
 
-- **dataset-specific input handling**
-- **statistical differential-expression analysis**
-- **workflow orchestration**
+```text
+Input contract
+     │
+     ▼
+Statistical analysis
+     │
+     ▼
+Visualization
+```
 
-Raw count tables and sample metadata are first transformed into a shared internal representation:
+The current implementation performs:
+
+- canonical input validation
+- feature-by-sample count matrix construction
+- low-expression filtering
+- TMM normalization
+- edgeR quasi-likelihood differential-expression analysis
+- explicit numerator-versus-denominator contrasts
+- Benjamini-Hochberg FDR correction
+- compressed tabular output
+- volcano plots
+- MA plots
+- reproducible orchestration with Nextflow DSL2
+
+The statistical core is written in R, while Nextflow handles execution, workflow composition, caching, resource configuration, and output publication.
+
+---
+
+# Input contract
+
+Only three input files are required.
+
+## 1. Counts
+
+Long-format raw integer counts:
 
 ```text
 feature_id    sample_id    count
+gene_001      sample_1     45
+gene_001      sample_2     51
+gene_002      sample_1     120
+gene_002      sample_2     98
 ```
 
-This canonical contract allows the statistical engine to remain independent of the original feature naming and sample conventions.
+Required columns:
 
-The current INTERES implementation supports:
-
-- prokaryotic metatranscriptomes
-- poly(A)-selected eukaryotic metatranscriptomes
-- WP1 bacterial-suppression experiments
-- WP2 phosphorus-manipulation experiments
-- configurable contrasts
-- raw integer counts as the primary DGE input
-- curated taxonomic and functional annotation
-- manifest-driven Nextflow execution
-
----
-
-## Current workflow
-
-The current analysis flow is:
-
-```text
-Analysis manifest
-       │
-       ▼
-   Nextflow DSL2
-       │
-       ▼
- dataset adapter
-       │
-       ▼
-Canonical count contract
-feature_id | sample_id | count
-       │
-       ▼
-Count matrix construction
-       │
-       ▼
-      edgeR
-       │
-       ├── filterByExpr
-       ├── TMM normalization
-       ├── dispersion estimation
-       ├── quasi-likelihood model
-       └── configured contrasts
-       │
-       ▼
-Annotated DGE results
-       │
-       ▼
-results/<analysis_id>/
-```
-
-Differential expression is calculated from **raw integer counts**, never TPM values.
-
-Positive `logFC` always represents higher expression in the configured numerator relative to the denominator.
-
----
-
-## Analysis design
-
-### WP1 — bacterial suppression
-
-The available contrasts depend on the organismal fraction represented in the experiment.
-
-#### Prokaryotes
-
-```text
-C_72h vs C_0h
-```
-
-#### Eukaryotes
-
-```text
-C_72h  vs C_0h
-CA_72h vs C_0h
-CA_72h vs C_72h
-```
-
-The workflow uses only biological groups actually present in the corresponding dataset.
-
-### WP2 — phosphorus manipulation
-
-Both organismal fractions use the same six contrasts:
-
-| Contrast | Numerator | Denominator |
-| --- | --- | --- |
-| `R_vs_C_0h` | River | Control |
-| `RP_vs_C_0h` | River + P | Control |
-| `RP_vs_R_0h` | River + P | River |
-| `R_vs_C_72h` | River | Control |
-| `RP_vs_C_72h` | River + P | Control |
-| `RP_vs_R_72h` | River + P | River |
-
-Contrast definitions are stored independently from the statistical engine under:
-
-```text
-config/contrasts/
-```
-
-This allows new experimental comparisons to be introduced without modifying the edgeR implementation.
-
----
-
-## Architecture
-
-The project currently uses a Nextflow DSL2 entry point, workflow layer, and local process modules.
-
-```text
-main.nf
-   │
-   ▼
-workflows/
-└── dge.nf
-       │
-       ▼
-modules/local/
-└── run_dge/
-    └── main.nf
-       │
-       ▼
-R analysis backend
-```
-
-The current `RUN_DGE` process executes the complete R differential-expression backend.
-
-Dataset-specific transformations are handled separately through adapters:
-
-```text
-R/
-├── adapters/
-│   └── interes.R
-│
-├── metadata.R
-├── counts.R
-├── io.R
-├── analysis_sheet.R
-├── edgeR_workflow.R
-└── plotting.R
-```
-
-The longer-term design is to keep the statistical model in R while using Nextflow for orchestration, reproducibility, execution environments, caching, and downstream workflow composition.
-
----
-
-## Analysis manifest
-
-The primary Nextflow interface is a CSV analysis manifest.
-
-An example is provided at:
-
-```text
-config/analyses.example.csv
-```
-
-Each row represents one complete DGE analysis.
-
-Current fields include:
-
-| Field | Purpose |
+| Column | Description |
 | --- | --- |
-| `analysis_id` | Unique identifier for the analysis |
-| `adapter` | Dataset-specific input adapter |
-| `organism` | Organismal fraction |
-| `workpackage` | Experimental design |
-| `counts` | Raw count table |
-| `metadata` | Sample metadata |
-| `annotations` | Curated feature annotations |
-| `contrasts` | Contrast definition file |
-| `feature_column` | Standard output feature identifier |
-| `raw_feature_column` | Feature identifier in the raw table |
-| `output_name` | Result filename |
-| `reference` | Optional historical reference result |
+| `feature_id` | Unique feature identifier |
+| `sample_id` | Sample identifier |
+| `count` | Raw integer count |
 
-Create a workstation-specific manifest with:
+Requirements:
 
-```bash
-cp config/analyses.example.csv config/analyses.local.csv
-```
+- counts must be non-negative integers
+- `feature_id` and `sample_id` cannot be empty
+- each `feature_id` / `sample_id` combination must be unique
 
-The local manifest is ignored by Git.
-
-Absolute paths are supported, while relative paths are resolved from the manifest location.
+The workflow reconstructs the feature-by-sample matrix internally.
 
 ---
 
-## Running with Nextflow
+## 2. Sample metadata
 
-Run a single configured analysis:
+Minimum sample information:
 
-```bash
-nextflow run . \
-    --input config/analyses.local.csv \
-    --analysis_id interes_wp1_prok
+```text
+sample_id    group
+sample_1     control
+sample_2     control
+sample_3     treatment
+sample_4     treatment
 ```
 
-Run every analysis defined in the manifest:
+Required columns:
 
-```bash
-nextflow run . \
-    --input config/analyses.local.csv
+| Column | Description |
+| --- | --- |
+| `sample_id` | Sample identifier matching the counts table |
+| `group` | Experimental group used by the DGE model |
+
+Additional metadata columns are allowed.
+
+Every sample present in the counts file must have a matching metadata entry.
+
+---
+
+## 3. Contrasts
+
+Contrasts are defined explicitly:
+
+```text
+contrast                numerator    denominator
+treatment_vs_control    treatment    control
 ```
 
-Reuse cached tasks after a previous or interrupted execution:
+Required columns:
+
+| Column | Description |
+| --- | --- |
+| `contrast` | Unique name for the comparison |
+| `numerator` | Group expected to have positive logFC values |
+| `denominator` | Reference group |
+
+Multiple contrasts can be included:
+
+```text
+contrast        numerator     denominator
+B_vs_A          B             A
+C_vs_A          C             A
+C_vs_B          C             B
+```
+
+Positive `logFC` always means higher expression in the configured **numerator** relative to the **denominator**.
+
+---
+
+# Workflow
+
+The current execution path is:
+
+```text
+counts.tsv
+metadata.tsv
+contrasts.tsv
+      │
+      ▼
+    Nextflow
+      │
+      ▼
+   RUN_DGE
+      │
+      ▼
+Canonical R backend
+      │
+      ├── input validation
+      ├── count matrix construction
+      ├── filterByExpr
+      ├── TMM normalization
+      ├── design matrix
+      ├── dispersion estimation
+      ├── quasi-likelihood model
+      └── configured contrasts
+      │
+      ▼
+   dge.tsv.gz
+      │
+      ▼
+   PLOT_DGE
+      │
+      ├── volcano.png
+      └── ma.png
+```
+
+---
+
+# Running the workflow
+
+Run Nextflow with the three required input files:
 
 ```bash
 nextflow run . \
-    --input config/analyses.local.csv \
-    -resume
+    --counts counts.tsv \
+    --metadata metadata.tsv \
+    --contrasts contrasts.tsv
 ```
 
 Results are written by default to:
 
 ```text
-results/<analysis_id>/
+results/
 ```
 
 A different output directory can be specified with:
 
 ```bash
---outdir /path/to/results
+nextflow run . \
+    --counts counts.tsv \
+    --metadata metadata.tsv \
+    --contrasts contrasts.tsv \
+    --outdir my_results
 ```
 
----
-
-## R command-line interface
-
-The underlying R workflow can also be executed independently from Nextflow.
-
-Run WP2:
+Nextflow caching can be reused with:
 
 ```bash
-Rscript --vanilla scripts/run_dge.R \
-    --organism=prokaryotes
-
-Rscript --vanilla scripts/run_dge.R \
-    --organism=eukaryotes
+nextflow run . \
+    --counts counts.tsv \
+    --metadata metadata.tsv \
+    --contrasts contrasts.tsv \
+    -resume
 ```
-
-Run WP1:
-
-```bash
-Rscript --vanilla scripts/run_dge.R \
-    --organism=prokaryotes \
-    --workpackage=WP1
-
-Rscript --vanilla scripts/run_dge.R \
-    --organism=eukaryotes \
-    --workpackage=WP1
-```
-
-The R interface is retained both for development and for validating the statistical backend independently from Nextflow.
 
 ---
 
-## Input contract
+# Output
 
-Dataset-specific adapters must eventually produce the canonical long-format representation:
-
-```text
-feature_id    sample_id    count
-```
-
-Sample metadata must provide at minimum:
+The main statistical output is:
 
 ```text
-sample_id    group
+results/dge.tsv.gz
 ```
 
-Additional metadata columns can be retained without modifying the core edgeR implementation.
+The table contains:
 
-The current INTERES adapters normalize the original prokaryotic and eukaryotic sample conventions into this shared representation.
+```text
+feature_id
+logFC
+logCPM
+F
+PValue
+FDR
+contrast
+```
 
-This contract is intended to become the interface for additional metatranscriptomic datasets and upstream workflows.
+Example:
+
+```text
+feature_id    logFC    logCPM    F       PValue      FDR         contrast
+gene_001      1.54     8.31      24.1    0.00001     0.0004      treatment_vs_control
+gene_002     -1.17     7.92      18.4    0.00008     0.0012      treatment_vs_control
+```
+
+Visualization outputs are written to:
+
+```text
+results/figures/
+├── volcano.png
+└── ma.png
+```
 
 ---
 
-## Differential-expression model
+# Differential-expression model
 
-The current edgeR workflow uses:
+The statistical workflow uses edgeR:
 
 ```text
+raw counts
+    │
+    ▼
 DGEList
-   ↓
+    │
+    ▼
 filterByExpr
-   ↓
+    │
+    ▼
 TMM normalization
-   ↓
+    │
+    ▼
 model.matrix(~0 + group)
-   ↓
+    │
+    ▼
 estimateDisp
-   ↓
+    │
+    ▼
 glmQLFit
-   ↓
+    │
+    ▼
 glmQLFTest
-   ↓
+    │
+    ▼
 Benjamini-Hochberg FDR
 ```
 
-Contrasts are defined externally using explicit numerator and denominator groups.
+Differential expression is always calculated from **raw integer counts**.
 
-This prevents contrast direction from being hidden inside hard-coded numerical vectors.
+TPM, FPKM, RPKM, or other normalized abundance estimates should not be supplied as the `count` column.
 
 ---
 
-## Tests
+# Visualization
 
-Fast synthetic contract tests can be run with:
+The current plotting layer produces two generic DGE diagnostics.
 
-```bash
-Rscript --vanilla tests/run_tests.R
-```
-
-The current test suite covers:
-
-- canonical sample metadata
-- canonical count tables
-- INTERES input adapters
-- count-matrix construction
-- contrast definitions
-- analysis-manifest validation
-- workflow configuration
-
-The tests do not require the full external metatranscriptomic dataset.
-
-Current test files include:
+## Volcano plot
 
 ```text
-tests/
-├── helpers.R
-├── run_tests.R
-├── test_analysis_sheet.R
-├── test_count_matrix.R
-├── test_counts.R
-├── test_interes_adapter.R
-├── test_metadata.R
-└── test_workflow.R
+results/figures/volcano.png
 ```
 
----
+Displays:
 
-## Result validation
+- log2 fold change on the x-axis
+- `-log10(FDR)` on the y-axis
+- upregulated features
+- downregulated features
+- non-significant features
 
-Regenerated WP2 results can be compared with the curated historical reference tables.
-
-```bash
-Rscript --vanilla scripts/compare_reference.R \
-    --organism=prokaryotes
-
-Rscript --vanilla scripts/compare_reference.R \
-    --organism=eukaryotes
-```
-
-The comparison checks feature/contrast identity and numerical consistency.
-
-Small differences in inferential statistics can occur because the historical notebooks did not preserve the exact edgeR and limma package versions used during the original analysis.
-
-See:
-
-```text
-docs/numerical-reproducibility.md
-```
-
-for details.
-
----
-
-## Preview plots
-
-DGE results can currently be summarized using:
-
-```bash
-Rscript --vanilla scripts/plot_dge.R
-```
-
-Generated diagnostics include:
-
-- volcano plots
-- MA plots
-- differential-expression counts
-- P-value distributions
-- top differential features
-
-Default thresholds are:
+Current default significance thresholds are:
 
 ```text
 FDR <= 0.05
 |log2 fold change| >= 1
 ```
 
-They can be changed without affecting the underlying statistical results.
+## MA plot
+
+```text
+results/figures/ma.png
+```
+
+Displays:
+
+- average expression (`logCPM`)
+- log2 fold change
+- differential-expression direction
+
+For datasets containing several contrasts, plots are automatically faceted by contrast.
 
 ---
 
-## Repository structure
+# Running the R components directly
+
+The R backend can also be executed without Nextflow.
+
+## Differential expression
+
+```bash
+Rscript --vanilla scripts/run_dge.R \
+    --counts=counts.tsv \
+    --metadata=metadata.tsv \
+    --contrasts=contrasts.tsv \
+    --output=dge.tsv.gz
+```
+
+## Plotting
+
+```bash
+Rscript --vanilla scripts/plot_dge.R \
+    --input=dge.tsv.gz \
+    --outdir=figures
+```
+
+These command-line interfaces are useful for development, debugging, and independent validation of the R components.
+
+---
+
+# Test profile
+
+The repository contains a synthetic canonical dataset under:
+
+```text
+tests/data/canonical/
+```
+
+The complete workflow can be tested with:
+
+```bash
+nextflow run . -profile test
+```
+
+This executes both:
+
+```text
+RUN_DGE
+PLOT_DGE
+```
+
+and produces:
+
+```text
+results/
+├── dge.tsv.gz
+└── figures/
+    ├── volcano.png
+    └── ma.png
+```
+
+The workflow can also be tested in stub mode:
+
+```bash
+nextflow run . -profile test -stub-run
+```
+
+---
+
+# R tests
+
+The R test suite can be run with:
+
+```bash
+Rscript --vanilla tests/run_tests.R
+```
+
+The current tests cover:
+
+- canonical count validation
+- canonical metadata validation
+- contrast validation
+- count-matrix construction
+- edgeR DGE execution
+- command-line execution
+- DGE plotting
+
+The tests use synthetic data and do not require an external metatranscriptomic dataset.
+
+---
+
+# Architecture
 
 ```text
 metatranscriptome-dge-workflow/
-├── main.nf                     # Nextflow DSL2 entry point
-├── nextflow.config             # Execution configuration
+│
+├── main.nf
+├── nextflow.config
 │
 ├── workflows/
-│   └── dge.nf                  # DGE workflow composition
+│   └── dge.nf
 │
 ├── modules/
 │   └── local/
-│       └── run_dge/
-│           └── main.nf         # Current DGE process
+│       ├── run_dge/
+│       │   └── main.nf
+│       └── plot_dge/
+│           └── main.nf
 │
 ├── R/
-│   ├── adapters/
-│   │   └── interes.R           # INTERES-specific input adaptation
-│   ├── analysis_sheet.R
-│   ├── config.R
+│   ├── contrasts.R
 │   ├── counts.R
 │   ├── edgeR_workflow.R
 │   ├── io.R
 │   ├── metadata.R
 │   └── plotting.R
 │
-├── scripts/                    # Command-line R entry points
+├── scripts/
+│   ├── run_dge.R
+│   └── plot_dge.R
 │
-├── config/
-│   ├── analyses.example.csv
-│   └── contrasts/
+├── tests/
+│   ├── data/
+│   │   └── canonical/
+│   └── test_*.R
 │
-├── tests/                      # Synthetic contract tests
-├── docs/                       # Reproducibility and legacy-analysis notes
-├── results/                    # Generated outputs, ignored by Git
+├── results/
 │
-├── DATA.md
 ├── DESCRIPTION
 ├── LICENSE
 └── README.md
 ```
 
+The design intentionally keeps the main layers separate:
+
+```text
+Nextflow
+    │
+    ├── orchestration
+    ├── caching
+    ├── resources
+    └── process composition
+
+R
+    │
+    ├── input validation
+    ├── statistical analysis
+    └── visualization
+```
+
 ---
 
-## Requirements
+# Design principles
 
-### Workflow engine
+## Dataset-independent core
+
+The workflow does not contain assumptions about:
+
+- organism
+- experimental project
+- sequencing campaign
+- sample naming conventions
+- feature annotation format
+- upstream quantification software
+
+Any dataset can be analyzed once it has been converted to the canonical:
+
+```text
+counts + metadata + contrasts
+```
+
+contract.
+
+## Explicit contrasts
+
+Comparison direction is never hidden inside hard-coded numerical vectors.
+
+For:
+
+```text
+numerator = treatment
+denominator = control
+```
+
+positive `logFC` means:
+
+```text
+treatment > control
+```
+
+## Modular workflow
+
+Differential-expression analysis and plotting are separate Nextflow processes:
+
+```text
+RUN_DGE
+   │
+   ▼
+PLOT_DGE
+```
+
+Additional analysis modules can therefore be added downstream without modifying the statistical core.
+
+---
+
+# Requirements
+
+## Workflow engine
 
 - Nextflow 24.10 or newer
 - Java compatible with the installed Nextflow release
 
-### R
-
-- R 4.3 or newer
-- edgeR
-- arrow
-- data.table
-- digest
-- ggplot2
-- tidyselect
-
-Check Nextflow with:
+Check the installation with:
 
 ```bash
 nextflow -version
 ```
 
-Run the R test suite with:
+## R
 
-```bash
-Rscript --vanilla tests/run_tests.R
+Current R dependencies are:
+
+```text
+edgeR
+data.table
+ggplot2
 ```
 
-The current implementation uses the local R environment. Containerized process execution is planned.
+The current implementation uses the local R environment.
+
+Containerized execution is planned.
 
 ---
 
-## Development status
+# Development status
 
-### Statistical backend
+## Input contract
 
-- [x] edgeR quasi-likelihood workflow
-- [x] Explicit named contrasts
-- [x] TMM normalization
-- [x] Raw-count input
-- [x] Annotation integration
-- [x] WP1 support
-- [x] WP2 support
-
-### Input model
-
-- [x] Canonical count contract
+- [x] Canonical long-format count table
 - [x] Canonical sample metadata
-- [x] INTERES prokaryotic adapter
-- [x] INTERES eukaryotic adapter
-- [x] Manifest-driven analysis configuration
-- [ ] Additional dataset adapters
+- [x] External contrast definitions
+- [x] Input validation
+- [x] Multiple contrasts
 
-### Nextflow
+## Differential expression
+
+- [x] Count-matrix construction
+- [x] Low-expression filtering
+- [x] TMM normalization
+- [x] edgeR quasi-likelihood workflow
+- [x] Explicit numerator / denominator comparisons
+- [x] Benjamini-Hochberg FDR
+- [x] Compressed TSV output
+
+## Nextflow
 
 - [x] DSL2 entry point
-- [x] Workflow layer
-- [x] Local `RUN_DGE` process
-- [x] Manifest-driven analyses
+- [x] Dedicated workflow layer
+- [x] `RUN_DGE` module
+- [x] `PLOT_DGE` module
+- [x] Configurable output directory
+- [x] Test profile
 - [x] Nextflow caching with `-resume`
-- [ ] Slim top-level `main.nf`
-- [ ] Expanded DGE workflow composition
-- [ ] Plotting module
-- [ ] Reference-comparison module
-- [ ] Containerized execution
-- [ ] nf-test integration
+- [x] Stub execution
+
+## Visualization
+
+- [x] Volcano plots
+- [x] MA plots
+- [ ] Differential-expression summary
+- [ ] Up/down feature counts by contrast
+- [ ] Top differential features
+- [ ] P-value distributions
+- [ ] Optional publication-oriented plotting outputs
+
+## Reproducibility and portability
+
+- [x] Dataset-independent canonical interface
+- [x] Synthetic integration dataset
+- [x] R unit/integration tests
+- [ ] Containerized process execution
+- [ ] `nf-test`
 - [ ] Continuous integration
-
-### Portability
-
-- [x] Dataset-specific input adaptation
-- [x] External contrast definitions
-- [x] Configurable input paths
-- [ ] Second independent metatranscriptomic dataset
-- [ ] Upstream `nf-core/metatdenovo` interoperability
-- [ ] Generalized adapter interface
+- [ ] Independent real-world dataset validation
+- [ ] Large metatranscriptomic dataset validation
+- [ ] Upstream workflow interoperability
 
 ---
 
-## Development roadmap
+# Roadmap
 
-The next development stage focuses on strengthening the Nextflow architecture rather than changing the statistical model.
+The next development stages are:
 
-Planned priorities are:
+1. **Differential-expression summary**
+   - count significant upregulated and downregulated features
+   - generate a summary table per contrast
+   - add a corresponding visualization
 
-1. Simplify `main.nf` so it acts primarily as the pipeline entry point.
-2. Move workflow composition into `workflows/dge.nf`.
-3. Separate plotting and reference comparison into Nextflow processes.
-4. Add reproducible process containers.
-5. Introduce `nf-test` for process and workflow testing.
-6. Add continuous integration.
-7. Validate the canonical input contract using an independent metatranscriptomic dataset.
-8. Test interoperability with outputs from `nf-core/metatdenovo`.
+2. **Expand visualization**
+   - top differential features
+   - P-value distributions
+   - configurable plotting thresholds
 
-The statistical edgeR backend should remain independent from dataset-specific adapters.
+3. **Containerization**
+   - provide reproducible R and edgeR environments
+   - remove dependence on locally installed R packages
 
-A central design goal is that supporting a new dataset should require a new input adapter rather than changes to the DGE engine.
+4. **Workflow testing**
+   - introduce `nf-test`
+   - test individual Nextflow processes and the complete workflow
+
+5. **Continuous integration**
+   - automatically execute tests on repository changes
+
+6. **Independent dataset validation**
+   - test the canonical contract with an unrelated metatranscriptomic dataset
+
+7. **Upstream interoperability**
+   - evaluate compatibility with count tables produced by established metatranscriptomic workflows
+
+8. **Scalability**
+   - evaluate performance with large feature tables and multiple contrasts
+
+The long-term goal is to keep the interface stable:
+
+```text
+counts.tsv
+metadata.tsv
+contrasts.tsv
+```
+
+while allowing the internal workflow to grow with additional analysis, visualization, testing, and reproducibility features.
 
 ---
 
-## Purpose
+# Scope
 
-This repository serves two complementary purposes.
+This workflow begins from an already quantified feature-count table.
 
-### Scientific reproducibility
+It does **not** currently perform:
 
-It reconstructs and documents the differential-expression workflow used for the INTERES marine metatranscriptomic analyses from the original R-based analysis environment.
+- read quality control
+- trimming
+- assembly
+- transcript prediction
+- taxonomic classification
+- functional annotation
+- read mapping
+- abundance quantification
 
-### Workflow engineering
+Those operations belong upstream.
 
-It is being developed into a reusable bioinformatics workflow demonstrating:
+This repository focuses specifically on:
 
-- Nextflow DSL2
-- scientific workflow modularization
-- canonical data contracts
-- dataset adapters
-- edgeR differential-expression analysis
-- reproducible execution
-- automated testing
-- workflow portability
-
-The project is intentionally being developed incrementally so that each architectural layer can be understood and validated before additional complexity is introduced.
+```text
+quantified metatranscriptomic features
+        │
+        ▼
+differential-expression analysis
+        │
+        ▼
+statistical results and visualization
+```
 
 ---
 
-## License
+# License
 
 This project is available under the [MIT License](LICENSE).
 
 ---
 
-## Author
+# Author
 
 **Erick Delgadillo-Nuño**
 
