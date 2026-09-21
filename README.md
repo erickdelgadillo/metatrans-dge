@@ -6,9 +6,6 @@
 ![Status](https://img.shields.io/badge/status-active%20development-yellow)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-
-
-
 A reusable **Nextflow DSL2 workflow for differential gene expression analysis of metatranscriptomic count data**.
 
 Differential-expression statistics are performed with the Bioconductor package **edgeR**. This repository provides the workflow orchestration, canonical input interface, contrast handling, testing, and visualization around edgeR.
@@ -110,8 +107,5 @@ results/
 MIT License.
 
 ## Author
-
-Erick Delgadillo-Nuñ
-
 
 **Erick Delgadillo-Nuño**

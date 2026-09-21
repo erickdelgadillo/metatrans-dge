@@ -1,17 +1,13 @@
-Package: metatranscriptomeDGEWorkflow
+Package: metatransDGE
 Type: Project
-Title: Reproducible Differential Expression for the INTERES Metatranscriptomes
+Title: Reusable Metatranscriptomic Differential Expression Workflow
 Version: 0.1.0
 Authors@R: person("Erick", "Delgadillo-Nuño", role = c("aut", "cre"))
-Description: Reconstructs the edgeR differential-expression workflow for the
-    prokaryotic and poly(A)-selected eukaryotic metatranscriptomes from the
-    INTERES mesocosm experiment.
+Description: Reusable differential-expression workflow for metatranscriptomic
+    count data using edgeR and Nextflow.
 License: file LICENSE
 Encoding: UTF-8
 Imports:
-    arrow,
     data.table,
-    digest,
     edgeR,
-    ggplot2,
-    tidyselect
+    ggplot2
