@@ -24,6 +24,8 @@ workflow {
     DGE_WORKFLOW(
         file(params.counts, checkIfExists: true),
         file(params.metadata, checkIfExists: true),
-        file(params.contrasts, checkIfExists: true)
+        file(params.contrasts, checkIfExists: true),
+        params.fdr,
+        params.logfc
     )
 }
