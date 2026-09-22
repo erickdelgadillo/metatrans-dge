@@ -40,7 +40,11 @@ parse_threshold <- function(args, name, default) {
 
   numeric_value <- suppressWarnings(as.numeric(value))
 
-  if (length(numeric_value) != 1L || is.na(numeric_value) || !is.finite(numeric_value)) {
+  if (
+    length(numeric_value) != 1L ||
+      is.na(numeric_value) ||
+      !is.finite(numeric_value)
+  ) {
     stop(
       "--", name, " must be numeric; received: ", value,
       call. = FALSE

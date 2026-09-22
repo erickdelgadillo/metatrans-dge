@@ -57,8 +57,8 @@ parse_numeric <- function(args, name, default) {
 
   if (
     length(numeric_value) != 1L ||
-    is.na(numeric_value) ||
-    !is.finite(numeric_value)
+      is.na(numeric_value) ||
+      !is.finite(numeric_value)
   ) {
     stop(
       "--", name, " must be numeric; received: ", value,

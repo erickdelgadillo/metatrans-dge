@@ -1,7 +1,12 @@
 #!/usr/bin/env Rscript
 
 file_argument <- grep("^--file=", commandArgs(FALSE), value = TRUE)[[1]]
-source(file.path(dirname(normalizePath(sub("^--file=", "", file_argument))), "helpers.R"))
+source(
+  file.path(
+    dirname(normalizePath(sub("^--file=", "", file_argument))),
+    "helpers.R"
+  )
+)
 
 metadata <- data.frame(
   sample_id = c("sample_1", "sample_2"),

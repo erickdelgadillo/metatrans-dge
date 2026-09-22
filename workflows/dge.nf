@@ -18,11 +18,11 @@ workflow DGE_WORKFLOW {
 
     main:
 
-    r_sources = Channel.value(
+    r_sources = channel.value(
         file("${projectDir}/R", checkIfExists: true)
     )
 
-    scripts_dir = Channel.value(
+    scripts_dir = channel.value(
         file("${projectDir}/scripts", checkIfExists: true)
     )
 
