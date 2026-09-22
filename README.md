@@ -7,26 +7,6 @@
 
 A reusable **Nextflow DSL2 workflow for differential gene expression (DGE) analysis of metatranscriptomic count data**.
 
-Differential-expression statistics are performed with **edgeR**. The workflow provides:
-
-- canonical input validation
-- TMM normalization
-- `filterByExpr` filtering
-- quasi-likelihood differential expression testing
-- configurable contrasts
-- configurable FDR and logFC thresholds
-- volcano and MA plots
-- DGE summaries
-- top differential features
-- normalized expression matrix
-- global expression heatmap
-- sample clustering
-- sample correlation heatmap
-- sample MDS visualization
-- Docker-based reproducibility
-
----
-
 ## Input files
 
 The workflow requires three tab-separated files.
