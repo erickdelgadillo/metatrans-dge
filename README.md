@@ -144,7 +144,7 @@ logFC = 1
 They can be changed from the command line:
 
 ```bash
-nextflow run . \
+nextflow run erickdelgadillo/metatrans-dge \
   --counts data/wp2_prok/counts.tsv.gz \
   --metadata data/wp2_prok/metadata.tsv \
   --contrasts data/wp2_prok/contrasts.tsv \
