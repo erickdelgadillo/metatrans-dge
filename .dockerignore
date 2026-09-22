@@ -1,0 +1,6 @@
+.git
+.nextflow
+work
+results
+data
+*.Rproj
