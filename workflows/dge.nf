@@ -1,4 +1,5 @@
 include { RUN_DGE            } from '../modules/local/run_dge/main'
+include { PLOT_HEATMAP       } from '../modules/local/plot_heatmap/main'
 include { SUMMARIZE_DGE      } from '../modules/local/summarize_dge/main'
 include { PLOT_SUMMARY       } from '../modules/local/plot_summary/main'
 include { TOP_FEATURES       } from '../modules/local/top_features/main'
@@ -28,6 +29,13 @@ workflow DGE_WORKFLOW {
         counts,
         metadata,
         contrasts,
+        r_sources,
+        scripts_dir
+    )
+
+    PLOT_HEATMAP(
+        RUN_DGE.out.normalized_expression,
+        metadata,
         r_sources,
         scripts_dir
     )
@@ -71,6 +79,7 @@ workflow DGE_WORKFLOW {
     emit:
     results = RUN_DGE.out.results
     normalized_expression = RUN_DGE.out.normalized_expression
+    heatmap_plot = PLOT_HEATMAP.out.plot
     summary = SUMMARIZE_DGE.out.summary
     summary_plot = PLOT_SUMMARY.out.plot
     top_features = TOP_FEATURES.out.top_features
