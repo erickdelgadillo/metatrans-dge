@@ -70,9 +70,10 @@ workflow DGE_WORKFLOW {
 
     emit:
     results = RUN_DGE.out.results
+    normalized_expression = RUN_DGE.out.normalized_expression
     summary = SUMMARIZE_DGE.out.summary
     summary_plot = PLOT_SUMMARY.out.plot
     top_features = TOP_FEATURES.out.top_features
     top_features_plot = PLOT_TOP_FEATURES.out.plot
     plots = PLOT_DGE.out.plots
-}
+    }

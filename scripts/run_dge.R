@@ -112,12 +112,14 @@ prepared <- build_count_matrix(
   metadata
 )
 
-statistics <- run_edger(
+analysis <- run_edger_analysis(
   prepared$counts,
   prepared$samples,
   "feature_id",
   contrasts
 )
+
+statistics <- analysis$statistics
 
 output_dir <- dirname(args$output)
 
@@ -140,3 +142,32 @@ message(
   " DGE rows to:\n",
   normalizePath(args$output)
 )
+
+normalized_output <- args[["normalized-output"]]
+
+if (!is.null(normalized_output)) {
+  normalized_output_dir <- dirname(normalized_output)
+
+  if (!dir.exists(normalized_output_dir)) {
+    dir.create(
+      normalized_output_dir,
+      recursive = TRUE
+    )
+  }
+
+  data.table::fwrite(
+    analysis$normalized_expression,
+    normalized_output,
+    sep = "\t"
+  )
+
+  message(
+    "Wrote ",
+    format(
+      nrow(analysis$normalized_expression),
+      big.mark = ","
+    ),
+    " normalized-expression rows to:\n",
+    normalizePath(normalized_output)
+  )
+}
