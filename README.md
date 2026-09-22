@@ -100,7 +100,7 @@ Positive `logFC` values indicate higher expression in the `numerator` group rela
 From the repository root:
 
 ```bash
-nextflow run . \
+nextflow run erickdelgadillo/metatrans-dge \
   --counts path/to/counts.tsv.gz \
   --metadata path/to/metadata.tsv \
   --contrasts path/to/contrasts.tsv \
@@ -120,7 +120,7 @@ docker build -t metatrans-dge:dev .
 Then run:
 
 ```bash
-nextflow run . \
+nextflow run erickdelgadillo/metatrans-dge \
   --counts data/wp2_prok/counts.tsv.gz \
   --metadata data/wp2_prok/metadata.tsv \
   --contrasts data/wp2_prok/contrasts.tsv \
