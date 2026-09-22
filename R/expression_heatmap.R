@@ -31,7 +31,7 @@ match_heatmap_metadata <- function(
 
   if (
     anyNA(metadata$sample_id) ||
-    any(!nzchar(metadata$sample_id))
+      any(!nzchar(metadata$sample_id))
   ) {
     stop(
       "Metadata sample_id values must be non-empty.",
@@ -48,7 +48,7 @@ match_heatmap_metadata <- function(
 
   if (
     anyNA(metadata$group) ||
-    any(!nzchar(metadata$group))
+      any(!nzchar(metadata$group))
   ) {
     stop(
       "Metadata group values must be non-empty.",
@@ -161,8 +161,8 @@ plot_expression_heatmap <- function(
 
   if (
     length(z_limit) != 1L ||
-    !is.finite(z_limit) ||
-    z_limit <= 0
+      !is.finite(z_limit) ||
+      z_limit <= 0
   ) {
     stop(
       "z_limit must be one positive finite number.",
@@ -172,8 +172,8 @@ plot_expression_heatmap <- function(
 
   if (
     length(max_rows) != 1L ||
-    !is.finite(max_rows) ||
-    max_rows < 1
+      !is.finite(max_rows) ||
+      max_rows < 1
   ) {
     stop(
       "max_rows must be a positive number.",

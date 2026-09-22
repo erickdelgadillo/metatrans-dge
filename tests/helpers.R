@@ -22,7 +22,10 @@ expect_error <- function(expression, pattern = NULL) {
     stop("Expected an error, but the expression succeeded.", call. = FALSE)
   }
 
-  if (!is.null(pattern) && !grepl(pattern, conditionMessage(error), fixed = TRUE)) {
+  if (
+    !is.null(pattern) &&
+      !grepl(pattern, conditionMessage(error), fixed = TRUE)
+  ) {
     stop(
       "Expected error containing '",
       pattern,

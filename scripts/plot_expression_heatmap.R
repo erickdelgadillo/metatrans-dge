@@ -10,7 +10,7 @@ parse_arguments <- function(arguments) {
   for (argument in arguments) {
     if (
       !startsWith(argument, "--") ||
-      !grepl("=", argument, fixed = TRUE)
+        !grepl("=", argument, fixed = TRUE)
     ) {
       stop(
         "Arguments must use --name=value syntax: ",

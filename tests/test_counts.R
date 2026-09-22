@@ -1,7 +1,12 @@
 #!/usr/bin/env Rscript
 
 file_argument <- grep("^--file=", commandArgs(FALSE), value = TRUE)[[1]]
-source(file.path(dirname(normalizePath(sub("^--file=", "", file_argument))), "helpers.R"))
+source(
+  file.path(
+    dirname(normalizePath(sub("^--file=", "", file_argument))),
+    "helpers.R"
+  )
+)
 
 counts <- data.frame(
   feature_id = c("feature_1", "feature_2"),

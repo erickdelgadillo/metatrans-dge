@@ -62,7 +62,7 @@ read_dge_results_for_plots <- function(path) {
 
   if (
     any(!is.finite(results$logFC)) ||
-    any(!is.finite(results$logCPM))
+      any(!is.finite(results$logCPM))
   ) {
     stop(
       "logFC and logCPM must contain finite values.",
@@ -72,7 +72,7 @@ read_dge_results_for_plots <- function(path) {
 
   if (
     any(results$PValue < 0 | results$PValue > 1) ||
-    any(results$FDR < 0 | results$FDR > 1)
+      any(results$FDR < 0 | results$FDR > 1)
   ) {
     stop(
       "PValue and FDR must be between zero and one.",

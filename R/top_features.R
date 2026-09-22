@@ -41,7 +41,7 @@ select_top_features <- function(
 
   results <- results[
     FDR <= fdr_threshold &
-    abs(logFC) >= logfc_threshold
+      abs(logFC) >= logfc_threshold
   ]
 
   if (!nrow(results)) {
