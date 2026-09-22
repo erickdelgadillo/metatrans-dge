@@ -1,8 +1,9 @@
-include { RUN_DGE       } from '../modules/local/run_dge/main'
-include { SUMMARIZE_DGE } from '../modules/local/summarize_dge/main'
-include { PLOT_SUMMARY  } from '../modules/local/plot_summary/main'
-include { PLOT_DGE      } from '../modules/local/plot_dge/main'
-include { TOP_FEATURES  } from '../modules/local/top_features/main'
+include { RUN_DGE            } from '../modules/local/run_dge/main'
+include { SUMMARIZE_DGE      } from '../modules/local/summarize_dge/main'
+include { PLOT_SUMMARY       } from '../modules/local/plot_summary/main'
+include { TOP_FEATURES       } from '../modules/local/top_features/main'
+include { PLOT_TOP_FEATURES  } from '../modules/local/plot_top_features/main'
+include { PLOT_DGE           } from '../modules/local/plot_dge/main'
 
 workflow DGE_WORKFLOW {
 
@@ -39,6 +40,26 @@ workflow DGE_WORKFLOW {
         logfc
     )
 
+    PLOT_SUMMARY(
+        SUMMARIZE_DGE.out.summary,
+        r_sources,
+        scripts_dir
+    )
+
+    TOP_FEATURES(
+        RUN_DGE.out.results,
+        r_sources,
+        scripts_dir,
+        fdr,
+        logfc
+    )
+
+    PLOT_TOP_FEATURES(
+        TOP_FEATURES.out.top_features,
+        r_sources,
+        scripts_dir
+    )
+
     PLOT_DGE(
         RUN_DGE.out.results,
         r_sources,
@@ -47,25 +68,11 @@ workflow DGE_WORKFLOW {
         logfc
     )
 
-    TOP_FEATURES(
-    RUN_DGE.out.results,
-    r_sources,
-    scripts_dir,
-    fdr,
-    logfc
-    )
-
-    PLOT_SUMMARY(
-        SUMMARIZE_DGE.out.summary,
-        r_sources,
-        scripts_dir
-    )
-
     emit:
     results = RUN_DGE.out.results
     summary = SUMMARIZE_DGE.out.summary
-    plots = PLOT_DGE.out.plots
     summary_plot = PLOT_SUMMARY.out.plot
     top_features = TOP_FEATURES.out.top_features
-
+    top_features_plot = PLOT_TOP_FEATURES.out.plot
+    plots = PLOT_DGE.out.plots
 }
