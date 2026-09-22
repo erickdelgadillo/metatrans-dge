@@ -107,16 +107,6 @@ nextflow run . \
   --outdir results/my_analysis
 ```
 
-For example, using the `wp2_prok` dataset:
-
-```bash
-nextflow run . \
-  --counts data/wp2_prok/counts.tsv.gz \
-  --metadata data/wp2_prok/metadata.tsv \
-  --contrasts data/wp2_prok/contrasts.tsv \
-  --outdir results/wp2_prok
-```
-
 ---
 
 ## Running with Docker
