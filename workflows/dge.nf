@@ -5,6 +5,7 @@ include { PLOT_SUMMARY       } from '../modules/local/plot_summary/main'
 include { TOP_FEATURES       } from '../modules/local/top_features/main'
 include { PLOT_TOP_FEATURES  } from '../modules/local/plot_top_features/main'
 include { PLOT_DGE           } from '../modules/local/plot_dge/main'
+include { PLOT_SAMPLE_QC     } from '../modules/local/plot_sample_qc/main'
 
 workflow DGE_WORKFLOW {
 
@@ -39,6 +40,13 @@ workflow DGE_WORKFLOW {
         r_sources,
         scripts_dir
     )
+
+    PLOT_SAMPLE_QC(
+    RUN_DGE.out.normalized_expression,
+    metadata,
+    r_sources,
+    scripts_dir
+)
 
     SUMMARIZE_DGE(
         RUN_DGE.out.results,
@@ -85,4 +93,6 @@ workflow DGE_WORKFLOW {
     top_features = TOP_FEATURES.out.top_features
     top_features_plot = PLOT_TOP_FEATURES.out.plot
     plots = PLOT_DGE.out.plots
+    sample_mds = PLOT_SAMPLE_QC.out.mds
+    sample_correlation = PLOT_SAMPLE_QC.out.correlation
     }
