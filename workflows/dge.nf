@@ -2,6 +2,7 @@ include { RUN_DGE       } from '../modules/local/run_dge/main'
 include { SUMMARIZE_DGE } from '../modules/local/summarize_dge/main'
 include { PLOT_SUMMARY  } from '../modules/local/plot_summary/main'
 include { PLOT_DGE      } from '../modules/local/plot_dge/main'
+include { TOP_FEATURES  } from '../modules/local/top_features/main'
 
 workflow DGE_WORKFLOW {
 
@@ -46,6 +47,14 @@ workflow DGE_WORKFLOW {
         logfc
     )
 
+    TOP_FEATURES(
+    RUN_DGE.out.results,
+    r_sources,
+    scripts_dir,
+    fdr,
+    logfc
+    )
+
     PLOT_SUMMARY(
         SUMMARIZE_DGE.out.summary,
         r_sources,
@@ -57,5 +66,6 @@ workflow DGE_WORKFLOW {
     summary = SUMMARIZE_DGE.out.summary
     plots = PLOT_DGE.out.plots
     summary_plot = PLOT_SUMMARY.out.plot
+    top_features = TOP_FEATURES.out.top_features
 
 }
