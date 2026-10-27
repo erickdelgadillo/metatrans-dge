@@ -1,0 +1,49 @@
+name: R and Nextflow CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      NXF_ANSI_LOG: 'false'
+      NXF_OPTS: '-Xms256m -Xmx2g'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install R, Bioconductor dependencies and Java
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            r-base r-bioc-edger r-cran-data.table r-cran-ggplot2 \
+            r-cran-r.utils openjdk-17-jre-headless
+      - name: Install Nextflow
+        run: |
+          curl -fsSL https://get.nextflow.io | bash
+          sudo mv nextflow /usr/local/bin/nextflow
+          nextflow -version
+      - name: Run independent R regression tests
+        run: Rscript --vanilla tests/run_tests.R
+      - name: Run end-to-end pipeline on synthetic data
+        run: nextflow run . -profile test -ansi-log false -with-trace
+      - name: Check expected results
+        run: |
+          test -s results/dge.tsv.gz
+          test -s results/normalized_expression.tsv.gz
+          test -s results/dge_summary.tsv
+          test -s results/top_features.tsv
+          python3 - <<'PY'
+          import csv, gzip
+          with gzip.open('results/dge.tsv.gz', 'rt') as handle:
+              rows = list(csv.DictReader(handle, delimiter='\t'))
+          assert rows, 'No differential-expression results'
+          assert {'feature_id', 'contrast', 'logFC', 'FDR'} <= set(rows[0]), 'Missing DGE columns'
+          print(f'Validated {len(rows)} DGE rows')
+          PY
