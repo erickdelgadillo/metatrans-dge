@@ -310,6 +310,8 @@ The R test suite can also be executed independently:
 Rscript --vanilla tests/run_tests.R
 ```
 
+GitHub Actions (`.github/workflows/ci.yml`) runs on pull requests, pushes to `main`, and manual dispatch. It executes the R regression suite and the synthetic Nextflow `test` profile, then checks that expected output tables are nonempty and contain required DGE columns. This does not validate biological conclusions from real datasets.
+
 ---
 
 # Requirements
