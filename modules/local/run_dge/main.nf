@@ -8,6 +8,7 @@ process RUN_DGE {
     path counts
     path metadata
     path contrasts
+    path model_config
     path r_sources
     path scripts_dir
 
@@ -21,6 +22,7 @@ process RUN_DGE {
     --counts='${counts}' \
     --metadata='${metadata}' \
     --contrasts='${contrasts}' \
+    --model-config='${model_config}' \
     --output='dge.tsv.gz' \
     --normalized-output='normalized_expression.tsv.gz'
     """

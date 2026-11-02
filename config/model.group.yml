@@ -1,0 +1,5 @@
+model:
+  engine: edgeR
+  design: group
+  test: quasi_likelihood
+  

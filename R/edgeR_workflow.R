@@ -33,8 +33,20 @@ run_edger_analysis <- function(
   count_matrix,
   sample_data,
   feature_column,
-  contrasts
+  contrasts,
+  model_config = default_model_config()
 ) {
+
+  # Validate the selected statistical model.
+  # Only the existing group-based edgeR model is supported.
+
+  if (!identical(model_config, default_model_config())) {
+    stop(
+      "Unsupported model configuration.",
+      call. = FALSE
+    )
+  }
+
   sample_data$group <- factor(
     sample_data$group,
     levels = unique(

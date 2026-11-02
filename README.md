@@ -112,6 +112,58 @@ Using Docker is recommended because it provides a reproducible R environment wit
 
 ---
 
+## Statistical model configuration
+
+By default, metatrans-dge uses an edgeR quasi-likelihood model with a group-based design:
+
+```r
+~0 + group
+```
+
+An optional YAML file can be used to configure the statistical model.
+
+Example (`config/model.group.yml`):
+
+```yaml
+model:
+  engine: edgeR
+  design: group
+  test: quasi_likelihood
+```
+
+Run the workflow with an explicit configuration:
+
+```bash
+nextflow run erickdelgadillo/metatrans-dge \
+  --counts path/to/counts.tsv.gz \
+  --metadata path/to/metadata.tsv \
+  --contrasts path/to/contrasts.tsv \
+  --model_config config/model.group.yml \
+  --outdir results/my_analysis \
+  -profile docker
+```
+
+### Supported models
+
+| Design | Statistical method | Status |
+|---|---|---|
+| Group comparisons | edgeR quasi-likelihood GLM | Supported |
+| Factorial designs | edgeR GLM with interactions | Planned |
+| Paired or blocked designs | edgeR GLM with blocking factors | Planned |
+| Covariate-adjusted designs | edgeR GLM | Planned |
+| Complex repeated measures | To be determined | Under evaluation |
+
+Currently, only `engine: edgeR`, `design: group` and
+`test: quasi_likelihood` are supported.
+
+Unsupported configurations are rejected with an error.
+
+When `--model_config` is omitted, the default group-based model
+is used.
+
+The default and explicit group configurations have been verified
+to produce identical statistical output tables.
+
 ## Significance thresholds
 
 The default thresholds are:
