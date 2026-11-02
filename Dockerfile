@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
-RUN R -q -e "install.packages(c('BiocManager','ggplot2','R.utils'), repos='https://cloud.r-project.org')"
+RUN R -q -e "install.packages(c('BiocManager','ggplot2','R.utils','yaml'), repos='https://cloud.r-project.org')"
 
 RUN R -q -e "install.packages('data.table', repos='https://cloud.r-project.org', type='source')"
 

@@ -7,6 +7,7 @@ source(file.path(repository_root, "R", "counts.R"))
 source(file.path(repository_root, "R", "metadata.R"))
 source(file.path(repository_root, "R", "contrasts.R"))
 source(file.path(repository_root, "R", "io.R"))
+source(file.path(repository_root, "R", "model_config.R"))
 source(file.path(repository_root, "R", "edgeR_workflow.R"))
 
 expect_error <- function(expression, pattern = NULL) {

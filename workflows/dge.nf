@@ -13,6 +13,7 @@ workflow DGE_WORKFLOW {
     counts
     metadata
     contrasts
+    model_config
     fdr
     logfc
 
@@ -30,6 +31,7 @@ workflow DGE_WORKFLOW {
         counts,
         metadata,
         contrasts,
+        model_config,
         r_sources,
         scripts_dir
     )

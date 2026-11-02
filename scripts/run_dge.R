@@ -65,6 +65,7 @@ repository_root <- normalizePath(
 source(file.path(repository_root, "R", "counts.R"))
 source(file.path(repository_root, "R", "metadata.R"))
 source(file.path(repository_root, "R", "contrasts.R"))
+source(file.path(repository_root, "R", "model_config.R"))
 source(file.path(repository_root, "R", "io.R"))
 source(file.path(repository_root, "R", "edgeR_workflow.R"))
 
@@ -107,6 +108,10 @@ contrasts <- read_contrasts(
   args$contrasts
 )
 
+model_config <- read_model_config(
+  args[["model-config"]]
+)
+
 prepared <- build_count_matrix(
   counts,
   metadata
@@ -116,7 +121,8 @@ analysis <- run_edger_analysis(
   prepared$counts,
   prepared$samples,
   "feature_id",
-  contrasts
+  contrasts,
+  model_config = model_config
 )
 
 statistics <- analysis$statistics
