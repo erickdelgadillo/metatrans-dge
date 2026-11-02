@@ -1,6 +1,6 @@
 # metatrans-dge — Current Project Checkpoint
 
-Last verified: 2026-09-25
+Last verified: 2026-11-02
 
 Repository:
 `erickdelgadillo/metatrans-dge`
@@ -9,7 +9,7 @@ Default branch:
 `main`
 
 Verified commit:
-`17bee955fce77db79c46ce4b70b92b02d640d697`
+`b0f0ede887614adf11a4d3f6ddb3bd6571fcc741`
 
 The current GitHub default branch is the authoritative source for implementation state.
 
@@ -152,72 +152,83 @@ These thresholds do not alter the fitted edgeR model.
 
 ---
 
-## 6. Testing already present
+## 6. Testing and CI
 
-The repository contains:
+The repository includes a synthetic canonical dataset and an
+R regression test suite.
 
-```text
-tests/data/canonical/
-├── counts.tsv
-├── metadata.tsv
-└── contrasts.tsv
-```
-
-R tests cover areas including:
-
-- CLI behavior;
-- counts validation;
-- metadata validation;
-- contrasts;
-- count-matrix construction;
-- core DGE;
-- normalized expression;
-- plotting;
-- expression heatmap;
-- sample QC;
-- summaries;
-- top features.
-
-Test runner:
+### Local validation — 2026-11-02
 
 ```bash
 Rscript --vanilla tests/run_tests.R
 ```
 
-Nextflow test execution:
+Result: **13 of 13 test files passed**.
 
 ```bash
-nextflow run . -profile test
+nextflow run . -profile test,docker -resume
 ```
 
-Docker test execution:
+Result: **8 of 8 Nextflow processes completed from cache**.
 
-```bash
-nextflow run . -profile test,docker
-```
+All eight processes reported `cached: 1`. This was not
+a fresh execution.
 
-Do not assume these tests passed in a new environment without executing them.
+The published synthetic output directory contained 11
+nonempty files. Table headers and initial records were
+inspected, including DGE statistics, normalized expression,
+summary counts, and top-feature rankings.
+
+### Continuous integration
+
+GitHub Actions was introduced in PR #22.
+
+The workflow runs on:
+
+- Pull requests
+- Pushes to `main`
+- Manual dispatch
+
+CI executes the R regression suite and a synthetic
+Nextflow end-to-end test. It also checks expected
+output tables.
+
+### Validation limits
+
+Synthetic testing verifies technical behavior and selected
+statistical properties. It does not establish biological
+validity on real metatranscriptomic datasets.
+
+Detailed evidence:
+`docs/project-context/TEST_EVIDENCE.md`.
 
 ---
 
 ## 7. Reproducibility
 
-Current repository includes:
+The repository includes:
 
-- Nextflow version requirement `>=24.10.0`;
-- Docker profile;
-- project Dockerfile;
-- R 4.4.1 base image;
-- edgeR;
-- data.table;
-- ggplot2;
-- R.utils;
-- canonical synthetic test dataset.
+- Nextflow DSL2 (minimum version >=24.10.0)
+- Docker execution profile
+- Project Dockerfile
+- R 4.4.1 base image
+- edgeR, data.table, ggplot2 and R.utils
+- Canonical synthetic test dataset
+- GitHub Actions CI
 
-Current Docker image is built locally as:
+The locally tested Nextflow version on 2026-11-02
+was **26.10.4**.
+
+The Docker image is built locally as:
 
 ```text
 metatrans-dge:dev
+```
+
+The tested source commit was:
+
+```text
+b0f0ede887614adf11a4d3f6ddb3bd6571fcc741
 ```
 
 ---
@@ -246,9 +257,14 @@ metatrans-dge:dev
 
 ### TESTED IN REPOSITORY
 
-Tests are implemented for the statistical core and major plotting/data functions.
+- R regression suite: 13/13 test files passed on 2026-11-02.
+- Nextflow Docker test: 8/8 processes completed from cache.
+- GitHub Actions CI implemented through PR #22.
+- Synthetic output tables and figures confirmed nonempty.
+- Selected table schemas and values manually inspected.
 
-Actual pass/fail status should be re-established when working in a new environment.
+Independent real-data scientific validation remains pending
+(issue #23).
 
 ### DOCUMENTED
 
@@ -290,15 +306,21 @@ These are intentionally downstream of the canonical DGE core.
 
 ## 10. Immediate next development direction
 
-The canonical DGE core is already substantially complete.
+The canonical DGE core is functionally implemented and
+supported by automated synthetic regression tests.
 
-The next meaningful development should not be another generic DGE feature merely for size.
+The next development priorities are:
 
-Priority should be to validate the workflow on real project datasets and then decide which downstream biological interpretation layer provides genuine scientific value.
+1. **Issue #24:** Record validation evidence and update
+   the project checkpoint.
+2. **Issue #23:** Validate the workflow using representative
+   real metatranscriptomic data and an independent edgeR
+   reference analysis.
+3. **Issue #25:** Design an optional KEGG functional-enrichment
+   layer with an explicit statistical universe.
 
-A strong next extension is a separate functional-enrichment layer using existing functional annotations, especially KEGG-oriented analysis, while keeping `metatrans-dge`'s DGE core reusable.
+Biological interpretation components should remain downstream
+of the generic DGE core.
 
-Before implementing that extension, define its input contract and whether it belongs:
-
-1. inside this repository as an optional downstream module, or
-2. in a separate downstream analysis repository/tool.
+Do not treat successful synthetic CI as proof of
+biological validity.
